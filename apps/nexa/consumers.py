@@ -2,10 +2,10 @@ import json
 import asyncio
 import tempfile
 import os
-import uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from openai import OpenAI
 from django.conf import settings
+
 from .transcribe import transcribe_with_whisper_local
 
 
@@ -14,7 +14,8 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.audio_chunks = []
         self.full_transcript = ""
-        print("WS connected")
+        self.pending_size = 0
+        self.processing = False
 
     async def disconnect(self, close_code):
         pass
@@ -24,25 +25,20 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
             self.audio_chunks.append(bytes_data)
             self.pending_size += len(bytes_data)
 
-            # Каждые ~200KB (~5-7 секунд) — транскрибируем
-            if total_size >= 200_000:
+            if self.pending_size >= 200_000:
                 await self.flush_and_transcribe()
 
-        # Получаем управляющие команды
         elif text_data:
             data = json.loads(text_data)
             if data.get("type") == "stop":
-                # Финальный чанк
                 if self.audio_chunks:
                     await self.flush_and_transcribe()
-
-                # Отправляем весь текст на классификацию
                 await self.classify()
 
     async def flush_and_transcribe(self):
-        """Сохраняем буфер в файл, транскрибируем, возвращаем текст."""
         chunk_data = b"".join(self.audio_chunks)
         self.audio_chunks = []
+        self.pending_size = 0
 
         with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as f:
             f.write(chunk_data)
@@ -57,7 +53,7 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
             )
 
             if text:
-                self.full_transcript = text  # Whisper даёт полный текст — это правильно
+                self.full_transcript += " " + text
                 await self.send(json.dumps({
                     "type": "partial",
                     "text": text.strip(),

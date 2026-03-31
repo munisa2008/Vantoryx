@@ -1,11 +1,13 @@
 from __future__ import annotations
+
+import os
 import threading
 from faster_whisper import WhisperModel
 
 _MODEL_LOCK = threading.Lock()
 _MODEL = None
 
-def _get_model(model_name: str = "base"):
+def _get_model(model_name: str = "tiny"):
     global _MODEL
     if _MODEL is None:
         with _MODEL_LOCK:
@@ -13,25 +15,17 @@ def _get_model(model_name: str = "base"):
                 _MODEL = WhisperModel(
                     model_name,
                     device="cpu",
-                    compute_type="int8",  
-                    cpu_threads=8,       
-                    num_workers=2,        
+                    compute_type="int8",
+                    cpu_threads=8,
+                    num_workers=2,
                 )
     return _MODEL
 
-def transcribe_with_whisper_local(file_path: str, language: str = "ru", model_name: str = "base") -> str:
+def transcribe_with_whisper_local(file_path: str, language: str = "ru", model_name: str = "tiny") -> str:
     if not os.path.exists(file_path):
         raise FileNotFoundError(file_path)
 
     model = _get_model(model_name)
-    segments, info = model.transcribe(
-        file_path,
-        language=language,
-        fp16=False,
-        verbose=False,
-        # temperature=0.0,
-        # condition_on_previous_text=False,
-    )
-
-    text = (result.get("text") or "").strip()
+    segments, info = model.transcribe(file_path, language=language)
+    text = " ".join(segment.text for segment in segments).strip()
     return text

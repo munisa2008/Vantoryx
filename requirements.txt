@@ -1,13 +1,10 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.4.1+cpu
-
 Django==5.2.8
 djangorestframework==3.16.1
 gunicorn==23.0.0
 whitenoise==6.11.0
 
 openai==2.11.0
-openai-whisper==20250625
+faster-whisper==1.1.1
 
 psycopg[binary]==3.3.2
 python-dotenv==1.2.1
