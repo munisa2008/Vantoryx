@@ -1,3 +1,6 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1+cpu
+
 Django==5.2.8
 djangorestframework==3.16.1
 gunicorn==23.0.0
