@@ -2,10 +2,10 @@ import json
 import asyncio
 import tempfile
 import os
+import uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from openai import OpenAI
 from django.conf import settings
-
 from .transcribe import transcribe_with_whisper_local
 
 
@@ -14,6 +14,7 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.audio_chunks = []
         self.full_transcript = ""
+        print("WS connected")
 
     async def disconnect(self, close_code):
         pass
@@ -21,21 +22,25 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         if bytes_data:
             self.audio_chunks.append(bytes_data)
-            total_size = sum(len(c) for c in self.audio_chunks)
+            self.pending_size += len(bytes_data)
 
+            # Каждые ~200KB (~5-7 секунд) — транскрибируем
             if total_size >= 200_000:
                 await self.flush_and_transcribe()
 
+        # Получаем управляющие команды
         elif text_data:
             data = json.loads(text_data)
-
             if data.get("type") == "stop":
+                # Финальный чанк
                 if self.audio_chunks:
                     await self.flush_and_transcribe()
 
+                # Отправляем весь текст на классификацию
                 await self.classify()
 
     async def flush_and_transcribe(self):
+        """Сохраняем буфер в файл, транскрибируем, возвращаем текст."""
         chunk_data = b"".join(self.audio_chunks)
         self.audio_chunks = []
 
@@ -44,7 +49,7 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
             tmp_path = f.name
 
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             text = await loop.run_in_executor(
                 None,
                 transcribe_with_whisper_local,
@@ -52,7 +57,7 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
             )
 
             if text:
-                self.full_transcript += " " + text
+                self.full_transcript = text  # Whisper даёт полный текст — это правильно
                 await self.send(json.dumps({
                     "type": "partial",
                     "text": text.strip(),
@@ -61,7 +66,9 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             pass
         finally:
-            os.unlink(tmp_path)
+            self.processing = False
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
 
     async def classify(self):
         transcript = self.full_transcript.strip()
@@ -80,7 +87,7 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
                 base_url="https://openrouter.ai/api/v1",
                 api_key=settings.OPENROUTER_API_KEY,
             )
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             completion = await loop.run_in_executor(
                 None,
                 lambda: client.chat.completions.create(

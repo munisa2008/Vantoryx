@@ -29,7 +29,7 @@ class AudioTaskCreateView(generics.CreateAPIView):
             transcript = transcribe_with_whisper_local(
                 file_path=file_path,
                 language="ru",
-                model_name="tiny",
+                model_name="base", 
             )
 
             completion = client.chat.completions.create(

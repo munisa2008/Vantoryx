@@ -35,18 +35,22 @@
 
   <script>
     let ws, mediaRecorder, stream;
+    let lastChunkSent = Promise.resolve(); // промис отправки последнего чанка
 
     async function startRecording() {
       document.getElementById('verdict').style.display = 'none';
       document.getElementById('transcript').textContent = '';
 
       // Открываем WebSocket
-      ws = new WebSocket(`ws://${location.host}/ws/transcribe/`);
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      ws = new WebSocket(`${proto}://${location.host}/ws/transcribe/`);
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
+        // Было
         if (data.type === 'partial') {
+    // Заменяем весь блок текстом от Whisper (он уже накопленный)
           document.getElementById('transcript').textContent = data.full;
           document.getElementById('status').innerHTML = '<span class="dot"></span>Идёт запись и транскрипция...';
         }
@@ -72,14 +76,24 @@
         });
 
         // Отправляем чанки каждые 5 секунд
-        mediaRecorder.ondataavailable = async (e) => {
+        mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-            const buffer = await e.data.arrayBuffer();
-            ws.send(buffer);
+            lastChunkSent = e.data.arrayBuffer().then(buffer => {
+              ws.send(buffer);
+            });
           }
         };
 
-        mediaRecorder.start(5000); // чанк каждые 5 сек
+        // Отправляем stop ПОСЛЕ гарантированной отправки последнего чанка
+        mediaRecorder.onstop = () => {
+          lastChunkSent.then(() => {
+            if (ws?.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'stop' }));
+            }
+          });
+        };
+
+        mediaRecorder.start(1000); // чанк каждые 5 сек
 
         document.getElementById('startBtn').style.display = 'none';
         document.getElementById('stopBtn').style.display = 'inline-block';
@@ -90,10 +104,6 @@
     function stopRecording() {
       mediaRecorder?.stop();
       stream?.getTracks().forEach(t => t.stop());
-
-      if (ws?.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'stop' }));
-      }
 
       document.getElementById('startBtn').style.display = 'inline-block';
       document.getElementById('stopBtn').style.display = 'none';
