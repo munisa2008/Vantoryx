@@ -7,7 +7,7 @@ import whisper
 _MODEL_LOCK = threading.Lock()
 _MODEL = None
 
-def _get_model(model_name: str = "base"):
+def _get_model(model_name: str = "tiny"):
     global _MODEL
     if _MODEL is None:
         with _MODEL_LOCK:
@@ -15,7 +15,7 @@ def _get_model(model_name: str = "base"):
                 _MODEL = whisper.load_model(model_name)
     return _MODEL
 
-def transcribe_with_whisper_local(file_path: str, language: str = "ru", model_name: str = "base") -> str:
+def transcribe_with_whisper_local(file_path: str, language: str = "ru", model_name: str = "tiny") -> str:
     if not os.path.exists(file_path):
         raise FileNotFoundError(file_path)
 
@@ -26,8 +26,6 @@ def transcribe_with_whisper_local(file_path: str, language: str = "ru", model_na
         language=language,
         fp16=False,
         verbose=False,
-        # temperature=0.0,
-        # condition_on_previous_text=False,
     )
 
     text = (result.get("text") or "").strip()

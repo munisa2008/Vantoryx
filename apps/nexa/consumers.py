@@ -14,35 +14,28 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
         await self.accept()
         self.audio_chunks = []
         self.full_transcript = ""
-        print("WS connected")
 
     async def disconnect(self, close_code):
-        print(f"WS disconnected: {close_code}")
+        pass
 
     async def receive(self, text_data=None, bytes_data=None):
-        # Получаем аудио-чанк
         if bytes_data:
             self.audio_chunks.append(bytes_data)
             total_size = sum(len(c) for c in self.audio_chunks)
 
-            # Каждые ~200KB (~5-7 секунд) — транскрибируем
             if total_size >= 200_000:
                 await self.flush_and_transcribe()
 
-        # Получаем управляющие команды
         elif text_data:
             data = json.loads(text_data)
 
             if data.get("type") == "stop":
-                # Финальный чанк
                 if self.audio_chunks:
                     await self.flush_and_transcribe()
 
-                # Отправляем весь текст на классификацию
                 await self.classify()
 
     async def flush_and_transcribe(self):
-        """Сохраняем буфер в файл, транскрибируем, возвращаем текст."""
         chunk_data = b"".join(self.audio_chunks)
         self.audio_chunks = []
 
@@ -55,7 +48,7 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
             text = await loop.run_in_executor(
                 None,
                 transcribe_with_whisper_local,
-                tmp_path, "ru", "turbo"
+                tmp_path, "ru", "tiny"
             )
 
             if text:
@@ -66,12 +59,11 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
                     "full": self.full_transcript.strip(),
                 }))
         except Exception as e:
-            print("Transcribe error:", repr(e))
+            pass
         finally:
             os.unlink(tmp_path)
 
     async def classify(self):
-        """Отправляем итоговый текст в GPT для классификации."""
         transcript = self.full_transcript.strip()
         if not transcript:
             await self.send(json.dumps({
