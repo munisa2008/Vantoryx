@@ -13,6 +13,11 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
+}
+
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',

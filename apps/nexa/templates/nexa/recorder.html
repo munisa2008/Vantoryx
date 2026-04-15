@@ -14,6 +14,11 @@
     button { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; }
     #startBtn { background: #28a745; color: white; }
     #stopBtn  { background: #dc3545; color: white; display: none; }
+    textarea { width: 100%; min-height: 110px; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+    .card { border: 1px solid #eee; border-radius: 10px; padding: 14px; margin-top: 18px; background: #fff; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+    .btnSecondary { background: #343a40; color: #fff; }
+    pre { white-space: pre-wrap; background: #fafafa; border: 1px solid #eee; padding: 12px; border-radius: 8px; overflow: auto; }
     .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; animation: blink 1s infinite; margin-right: 6px; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
   </style>
@@ -33,9 +38,61 @@
 
   <div id="verdict"></div>
 
+  <div class="card">
+    <h3>Проверка текста (API)</h3>
+    <textarea id="textInput" placeholder="Вставьте сюда текст сообщения/переписки..."></textarea>
+    <div class="row">
+      <button class="btnSecondary" onclick="analyzeText()">Проверить текст</button>
+    </div>
+    <pre id="textResult"></pre>
+  </div>
+
+  <div class="card">
+    <h3>Проверка ссылок/домена (API)</h3>
+    <textarea id="linkTextInput" placeholder="Вставьте текст, где есть ссылка (https://...)"></textarea>
+    <div class="row">
+      <button class="btnSecondary" onclick="analyzeLinks()">Проверить ссылки</button>
+    </div>
+    <pre id="linkResult"></pre>
+  </div>
+
   <script>
     let ws, mediaRecorder, stream;
     let lastChunkSent = Promise.resolve(); // промис отправки последнего чанка
+
+    async function analyzeText() {
+      const text = document.getElementById('textInput').value || '';
+      const out = document.getElementById('textResult');
+      out.textContent = '⏳ Отправляю запрос...';
+      try {
+        const resp = await fetch('/api/text/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        const data = await resp.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        out.textContent = String(e);
+      }
+    }
+
+    async function analyzeLinks() {
+      const text = document.getElementById('linkTextInput').value || '';
+      const out = document.getElementById('linkResult');
+      out.textContent = '⏳ Отправляю запрос...';
+      try {
+        const resp = await fetch('/api/link/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        const data = await resp.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        out.textContent = String(e);
+      }
+    }
 
     async function startRecording() {
       document.getElementById('verdict').style.display = 'none';
