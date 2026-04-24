@@ -7,12 +7,16 @@ from rest_framework.permissions import AllowAny
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .models import AudioTask
+from .models import AudioTask, HistoryEntry
 from .serializers import (
     AudioTaskCreateSerializer,
     AudioTaskSerializer,
     TextScamAnalysisRequestSerializer,
     LinkAnalysisRequestSerializer,
+    WhatToReplyRequestSerializer,
+    HumanRewriteRequestSerializer,
+    ReversePhishingRequestSerializer,
+    HistoryEntrySerializer,
 )
 from .transcribe import transcribe_with_whisper_local
 
@@ -74,6 +78,16 @@ class AudioTaskCreateView(generics.CreateAPIView):
             obj.save(update_fields=["transcription", "summary", "status"])
 
         obj.save(update_fields=["transcription", "status", "summary"])
+
+        HistoryEntry.objects.create(
+            entry_type='audio',
+            audio_task=obj,
+            result={
+                'transcription': obj.transcription,
+                'summary': obj.summary,
+                'status': obj.status,
+            },
+        )
 
 
 class AudioTaskDetailView(generics.RetrieveAPIView):
@@ -157,14 +171,20 @@ def text_scam(request):
 
     short_explanation = str(data.get("short_explanation", ""))[:800]
 
-    return Response(
-        {
-            "verdict": verdict,
-            "risk_score": risk_score,
-            "reasons": reasons,
-            "short_explanation": short_explanation,
-        }
+    response_data = {
+        "verdict": verdict,
+        "risk_score": risk_score,
+        "reasons": reasons,
+        "short_explanation": short_explanation,
+    }
+
+    HistoryEntry.objects.create(
+        entry_type='text',
+        input_text=text,
+        result=response_data,
     )
+
+    return Response(response_data)
 
 
 def _extract_urls(text: str) -> list[str]:
@@ -437,15 +457,256 @@ def link_analysis(request):
         except Exception:
             ai_conclusion = ""
 
-    return Response(
-        {
-            "verdict": overall_verdict,
-            "risk_score": overall_score,
-            "extracted_urls": urls,
-            "ai_conclusion": ai_conclusion,
-            "items": items,
-        }
+    response_data = {
+        "verdict": overall_verdict,
+        "risk_score": overall_score,
+        "extracted_urls": urls,
+        "ai_conclusion": ai_conclusion,
+        "items": items,
+    }
+
+    HistoryEntry.objects.create(
+        entry_type='link',
+        input_text=text,
+        result=response_data,
     )
+
+    return Response(response_data)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def what_to_reply(request):
+    serializer = WhatToReplyRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    text = serializer.validated_data["text"]
+
+    completion = client.chat.completions.create(
+        model="openai/gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Ты — помощник в режиме «что ответить?». "
+                    "Пользователь даёт входящее сообщение/сценарий (часто мошеннический). "
+                    "Твоя задача: сгенерировать безопасный ответ-сообщение: вежливо отказаться, "
+                    "не раскрывать никакие личные данные, не подтверждать аккаунты/платежи/коды, "
+                    "не переходить по ссылкам и не вступать в спор.\n\n"
+                    "Верни результат СТРОГО в JSON без markdown и без лишнего текста, по схеме:\n"
+                    "{"
+                    '"reply_message":"...",'
+                    '"dont_do":["...","..."]'
+                    "}\n\n"
+                    "Жёсткие правила reply_message:\n"
+                    "- Язык: русский.\n"
+                    "- Длина: 1-3 коротких предложения, <= 300 символов.\n"
+                    "- Никаких персональных данных, кодов, ссылок, имён банков/органов как утверждений.\n"
+                    "- Если просят «подтвердить/оплатить/ввести код/дать доступ/установить приложение» — вежливо отказаться и завершить диалог.\n"
+                    "- Можно предложить безопасную альтернативу: «проверю через официальный сайт/приложение/номер из договора» (без конкретных ссылок/номеров).\n\n"
+                    "Правила dont_do:\n"
+                    "- 5-10 коротких пунктов, императив, без воды.\n"
+                    "- Темы: не сообщать коды/пароли/CVV, не переводить деньги, не устанавливать ПО, не переходить по ссылкам, не давать удалённый доступ, не диктовать данные карты/документов.\n"
+                ),
+            },
+            {"role": "user", "content": text},
+        ],
+        temperature=0.2,
+        max_tokens=300,
+    )
+
+    raw = (completion.choices[0].message.content or "").strip()
+    try:
+        import json
+
+        data = json.loads(raw)
+    except Exception:
+        data = {}
+
+    reply_message = str(data.get("reply_message", "")).strip()
+    dont_do = data.get("dont_do") if isinstance(data.get("dont_do"), list) else []
+    dont_do = [str(x).strip()[:200] for x in dont_do if str(x).strip()][:10]
+
+    if not reply_message:
+        reply_message = (
+            "Спасибо за сообщение. Я не подтверждаю операции и не сообщаю коды или данные. "
+            "Проверю информацию только через официальный канал."
+        )
+    reply_message = reply_message[:300]
+
+    if len(dont_do) < 5:
+        dont_do = [
+            "Не сообщать коды из SMS/приложений и пароли",
+            "Не передавать данные карты (номер, срок, CVV) и документы",
+            "Не переводить деньги и не «возвращать» платежи по просьбе",
+            "Не переходить по ссылкам из сообщения и не открывать вложения",
+            "Не устанавливать приложения и не давать удалённый доступ",
+        ]
+
+    response_data = {"reply_message": reply_message, "dont_do": dont_do}
+
+    HistoryEntry.objects.create(
+        entry_type='reply',
+        input_text=text,
+        result=response_data,
+    )
+
+    return Response(response_data)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def human_rewrite(request):
+    serializer = HumanRewriteRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    text = serializer.validated_data["text"]
+
+    completion = client.chat.completions.create(
+        model="openai/gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Ты — режим «перепиши как нормальный человек». "
+                    "Тебе дают подозрительное сообщение (часто фишинг/скам). "
+                    "Твоя задача — переписать его в честный вариант, прямо называя намерение злоумышленника, "
+                    "но без персональных данных и без реальных ссылок/номеров.\n\n"
+                    "Верни результат СТРОГО в JSON без markdown и без лишнего текста, по схеме:\n"
+                    "{"
+                    '"honest_version":"...",'
+                    '"red_flags":["...","..."]'
+                    "}\n\n"
+                    "Правила honest_version:\n"
+                    "- Язык: русский.\n"
+                    "- 1-2 предложения, <= 220 символов.\n"
+                    "- Если в исходнике есть ссылка/телефон/контакты — замени на «[ссылка]»/«[номер]».\n"
+                    "- Не призывай к действиям (не «нажмите»), только раскрывай истинный смысл.\n"
+                    "- Можно использовать грубую правду: «хотим украсть…», «пытаемся получить код…».\n\n"
+                    "Правила red_flags:\n"
+                    "- 0-6 коротких пунктов (например: срочность, угроза, просьба кода, ссылка, подмена бренда).\n"
+                ),
+            },
+            {"role": "user", "content": text},
+        ],
+        temperature=0.2,
+        max_tokens=200,
+    )
+
+    raw = (completion.choices[0].message.content or "").strip()
+    try:
+        import json
+
+        data = json.loads(raw)
+    except Exception:
+        data = {}
+
+    honest_version = str(data.get("honest_version", "")).strip()
+    red_flags = data.get("red_flags") if isinstance(data.get("red_flags"), list) else []
+    red_flags = [str(x).strip()[:200] for x in red_flags if str(x).strip()][:6]
+
+    if not honest_version:
+        honest_version = "Похоже, это попытка выманить ваши данные/доступ или деньги через обман и давление."
+    honest_version = honest_version[:220]
+
+    response_data = {"honest_version": honest_version, "red_flags": red_flags}
+
+    HistoryEntry.objects.create(
+        entry_type='rewrite',
+        input_text=text,
+        result=response_data,
+    )
+
+    return Response(response_data)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def reverse_phishing(request):
+    serializer = ReversePhishingRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    text = serializer.validated_data["text"]
+
+    completion = client.chat.completions.create(
+        model="openai/gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Ты — режим «обратный фишинг». "
+                    "Тебе дают подозрительное сообщение. "
+                    "Сгенерируй фейковый ответ от пользователя, но БЕЗОПАСНЫЙ: "
+                    "без ссылок, без номеров/кодов/персональных данных, без подтверждений, "
+                    "с тянущим временем (например: «проверю позже через официальный сайт/приложение»).\n\n"
+                    "Далее САМ оцени, не раскрыл ли человек лишнего в этом ответе.\n\n"
+                    "Верни результат СТРОГО в JSON без markdown, схема:\n"
+                    "{"
+                    '"reply_message":"...",'
+                    '"self_check_verdict":"safe|leaky|uncertain",'
+                    '"self_check_issues":["..."]'
+                    "}\n\n"
+                    "Правила reply_message:\n"
+                    "- русский, 1-2 предложения, <= 260 символов\n"
+                    "- без ссылок/номеров/почт/адресов/ФИО/данных карт/кодов\n"
+                    "- не выполнять требования, не спорить, не оправдываться\n"
+                    "- обязательно «позже/проверю сам через официальный канал»\n\n"
+                    "Правила self_check:\n"
+                    "- verdict=safe если нет данных/ссылок/подтверждений.\n"
+                    "- verdict=leaky если есть хоть намёк на личные данные, подтверждение аккаунта/операции, коды, контакты.\n"
+                    "- issues: 0-6 пунктов, только конкретика.\n"
+                ),
+            },
+            {"role": "user", "content": text},
+        ],
+        temperature=0.2,
+        max_tokens=220,
+    )
+
+    raw = (completion.choices[0].message.content or "").strip()
+    try:
+        import json
+
+        data = json.loads(raw)
+    except Exception:
+        data = {}
+
+    reply_message = str(data.get("reply_message", "")).strip()
+    verdict = str(data.get("self_check_verdict", "")).strip()
+    issues = data.get("self_check_issues") if isinstance(data.get("self_check_issues"), list) else []
+    issues = [str(x).strip()[:200] for x in issues if str(x).strip()][:6]
+
+    if verdict not in {"safe", "leaky", "uncertain"}:
+        verdict = "uncertain"
+
+    if not reply_message:
+        reply_message = "Сейчас не могу ответить. Проверю информацию позже через официальный сайт/приложение."
+        verdict = "safe"
+        issues = []
+    reply_message = reply_message[:260]
+
+    response_data = {
+        "reply_message": reply_message,
+        "self_check_verdict": verdict,
+        "self_check_issues": issues,
+    }
+
+    HistoryEntry.objects.create(
+        entry_type='reverse',
+        input_text=text,
+        result=response_data,
+    )
+
+    return Response(response_data)
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def history_list(request):
+    entries = HistoryEntry.objects.select_related('audio_task').all()[:100]
+    serializer = HistoryEntrySerializer(entries, many=True, context={'request': request})
+    return Response(serializer.data)
 
 
 def recorder_view(request):

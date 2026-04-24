@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AudioTask
+from .models import AudioTask, HistoryEntry
 
 
 class AudioTaskCreateSerializer(serializers.ModelSerializer):
@@ -50,3 +50,48 @@ class LinkAnalysisResponseSerializer(serializers.Serializer):
     risk_score = serializers.IntegerField(min_value=0, max_value=100)
     extracted_urls = serializers.ListField(child=serializers.CharField(), allow_empty=True)
     items = LinkAnalysisItemSerializer(many=True)
+
+
+class WhatToReplyRequestSerializer(serializers.Serializer):
+    text = serializers.CharField(allow_blank=False, trim_whitespace=True, max_length=20000)
+
+
+class WhatToReplyResponseSerializer(serializers.Serializer):
+    reply_message = serializers.CharField(allow_blank=False)
+    dont_do = serializers.ListField(child=serializers.CharField(), allow_empty=False)
+
+
+class HumanRewriteRequestSerializer(serializers.Serializer):
+    text = serializers.CharField(allow_blank=False, trim_whitespace=True, max_length=20000)
+
+
+class HumanRewriteResponseSerializer(serializers.Serializer):
+    honest_version = serializers.CharField(allow_blank=False)
+    red_flags = serializers.ListField(child=serializers.CharField(), allow_empty=True)
+
+
+class ReversePhishingRequestSerializer(serializers.Serializer):
+    text = serializers.CharField(allow_blank=False, trim_whitespace=True, max_length=20000)
+
+
+class ReversePhishingResponseSerializer(serializers.Serializer):
+    reply_message = serializers.CharField(allow_blank=False)
+    self_check_verdict = serializers.ChoiceField(choices=["safe", "leaky", "uncertain"])
+    self_check_issues = serializers.ListField(child=serializers.CharField(), allow_empty=True)
+
+
+class HistoryEntrySerializer(serializers.ModelSerializer):
+    audio_file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HistoryEntry
+        fields = ['id', 'entry_type', 'input_text', 'audio_file', 'result', 'created_at']
+
+    def get_audio_file(self, obj):
+        if obj.audio_task and obj.audio_task.file:
+            request = self.context.get('request')
+            url = obj.audio_task.file.url
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        return None

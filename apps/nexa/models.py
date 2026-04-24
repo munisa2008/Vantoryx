@@ -20,3 +20,25 @@ class AudioTask(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class HistoryEntry(models.Model):
+    ENTRY_TYPES = [
+        ('text', 'Text Scam'),
+        ('link', 'Link Analysis'),
+        ('reply', 'What to Reply'),
+        ('rewrite', 'Human Rewrite'),
+        ('reverse', 'Reverse Phishing'),
+        ('audio', 'Audio'),
+    ]
+
+    entry_type = models.CharField(max_length=20, choices=ENTRY_TYPES)
+    input_text = models.TextField(blank=True, null=True)
+    audio_task = models.ForeignKey(
+        AudioTask, null=True, blank=True, on_delete=models.SET_NULL, related_name='history_entries'
+    )
+    result = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
