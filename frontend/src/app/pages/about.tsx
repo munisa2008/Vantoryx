@@ -1,17 +1,46 @@
 import { Card, Grid, Pill } from "../../ui/components";
-import { IconAndroid, IconApple, IconCode, IconDevice, IconExternal, IconGitHub, IconLink, IconLinux, IconMessage, IconMic, IconPulse, IconShield, IconStar, IconTelegram, IconTimer, IconWand, IconWindows } from "../../ui/icons";
+import {
+  IconAndroid,
+  IconApple,
+  IconCode,
+  IconDevice,
+  IconExternal,
+  IconGitHub,
+  IconLink,
+  IconLinux,
+  IconMessage,
+  IconMic,
+  IconPulse,
+  IconShield,
+  IconStar,
+  IconTelegram,
+  IconTimer,
+  IconWand,
+  IconWindows,
+} from "../../ui/icons";
 import { usePWAInstall, type Platform } from "../../lib/pwa";
 
 function InstallAction({
-  platform, current, canInstall, isIOS, install,
+  platform,
+  current,
+  canInstall,
+  isIOS,
+  install,
 }: {
-  platform: Platform; current: Platform; canInstall: boolean; isIOS: boolean; install(): Promise<void>;
+  platform: Platform;
+  current: Platform;
+  canInstall: boolean;
+  isIOS: boolean;
+  install(): Promise<void>;
 }) {
   const isApple = platform === "ios" || platform === "macos";
 
   if (isApple) {
     return (
-      <span className="about-row-value" style={{ fontSize: 11.5, color: "var(--muted)" }}>
+      <span
+        className="about-row-value"
+        style={{ fontSize: 11.5, color: "var(--muted)" }}
+      >
         Safari → Поделиться → На экран «Домой»
       </span>
     );
@@ -19,7 +48,11 @@ function InstallAction({
 
   if (canInstall && current === platform) {
     return (
-      <button className="btn btn--primary" style={{ padding: "6px 14px", minHeight: 32, fontSize: 13 }} onClick={install}>
+      <button
+        className="btn btn--primary"
+        style={{ padding: "6px 14px", minHeight: 32, fontSize: 13 }}
+        onClick={install}
+      >
         Установить
       </button>
     );
@@ -31,7 +64,7 @@ function InstallAction({
 
   return (
     <a
-      href="https://vantoryx.up.railway.app"
+      href="https://vantoryx.tech"
       target="_blank"
       rel="noopener noreferrer"
       className="about-row-link"
@@ -56,22 +89,46 @@ export function AboutPage() {
           <Pill tone="neutral">v0.1.0</Pill>
         </div>
         <p className="about-desc">
-          Разбираем подозрительные сообщения, ссылки и разговоры. Замечаем уловки раньше, чем вы потеряете деньги или данные. Ничего не сохраняем.
+          Разбираем подозрительные сообщения, ссылки и разговоры. Замечаем
+          уловки раньше, чем вы потеряете деньги или данные. Ничего не
+          сохраняем.
         </p>
       </Card>
 
       <Card title="Ссылки проекта">
         <div className="about-section" style={{ gap: 2 }}>
           {[
-            { icon: <IconGitHub />, label: "Исходный код", href: "https://github.com/Amir22we/Vantoryx" },
-            { icon: <IconTelegram />, label: "Telegram-бот", href: "https://t.me/VantoryxBot" },
-            { icon: <IconPulse />, label: "API", href: "https://vantoryx.up.railway.app/api/" },
-            { icon: <IconCode />, label: "Схема API", href: "https://vantoryx.up.railway.app/api/schema/" },
+            {
+              icon: <IconGitHub />,
+              label: "Исходный код",
+              href: "https://github.com/Amir22we/Vantoryx",
+            },
+            {
+              icon: <IconTelegram />,
+              label: "Telegram-бот",
+              href: "https://t.me/vantoryx_tg_bot",
+            },
+            // { icon: <IconPulse />, label: "API", href: "https://vantoryx.up.railway.app/api/" },
+            {
+              icon: <IconPulse />,
+              label: "API",
+              href: "https://www.django-rest-framework.org/api/",
+            },
+            {
+              icon: <IconCode />,
+              label: "Схема API",
+              href: "https://www.django-rest-framework.org/api/",
+            },
           ].map((item) => (
             <div key={item.label} className="about-row">
               <div className="about-row-icon">{item.icon}</div>
               <div className="about-row-body">
-                <a href={item.href} target="_blank" rel="noopener noreferrer" className="about-row-label about-row-link">
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="about-row-label about-row-link"
+                >
                   {item.label}
                   <IconExternal />
                 </a>
@@ -84,56 +141,106 @@ export function AboutPage() {
       <Card title="Vantoryx на других платформах">
         <div className="about-section">
           <div className="about-row">
-            <div className="about-row-icon"><IconAndroid /></div>
+            <div className="about-row-icon">
+              <IconAndroid />
+            </div>
             <div className="about-row-body">
               <span className="about-row-label">
                 Android
-                {platform === "android" && <Pill tone="safe" style={{ marginLeft: 6 }}>Ваше устройство</Pill>}
+                {platform === "android" && (
+                  <Pill tone="safe" style={{ marginLeft: 6 }}>
+                    Ваше устройство
+                  </Pill>
+                )}
               </span>
-              <InstallAction platform="android" current={platform} canInstall={canInstall} isIOS={isIOS} install={install} />
+              <InstallAction
+                platform="android"
+                current={platform}
+                canInstall={canInstall}
+                isIOS={isIOS}
+                install={install}
+              />
             </div>
           </div>
           <div className="about-row">
-            <div className="about-row-icon"><IconWindows /></div>
+            <div className="about-row-icon">
+              <IconWindows />
+            </div>
             <div className="about-row-body">
               <span className="about-row-label">
                 Windows
-                {platform === "windows" && <Pill tone="safe" style={{ marginLeft: 6 }}>Ваше устройство</Pill>}
+                {platform === "windows" && (
+                  <Pill tone="safe" style={{ marginLeft: 6 }}>
+                    Ваше устройство
+                  </Pill>
+                )}
               </span>
-              <InstallAction platform="windows" current={platform} canInstall={canInstall} isIOS={isIOS} install={install} />
+              <InstallAction
+                platform="windows"
+                current={platform}
+                canInstall={canInstall}
+                isIOS={isIOS}
+                install={install}
+              />
             </div>
           </div>
           <div className="about-row">
-            <div className="about-row-icon"><IconLinux /></div>
+            <div className="about-row-icon">
+              <IconLinux />
+            </div>
             <div className="about-row-body">
               <span className="about-row-label">
                 Linux
-                {platform === "linux" && <Pill tone="safe" style={{ marginLeft: 6 }}>Ваше устройство</Pill>}
+                {platform === "linux" && (
+                  <Pill tone="safe" style={{ marginLeft: 6 }}>
+                    Ваше устройство
+                  </Pill>
+                )}
               </span>
-              <InstallAction platform="linux" current={platform} canInstall={canInstall} isIOS={isIOS} install={install} />
+              <InstallAction
+                platform="linux"
+                current={platform}
+                canInstall={canInstall}
+                isIOS={isIOS}
+                install={install}
+              />
             </div>
           </div>
           <div className="about-row">
-            <div className="about-row-icon"><IconApple /></div>
+            <div className="about-row-icon">
+              <IconApple />
+            </div>
             <div className="about-row-body">
               <span className="about-row-label">
                 iOS + macOS
-                {(platform === "ios" || platform === "macos") && <Pill tone="safe" style={{ marginLeft: 6 }}>Ваше устройство</Pill>}
+                {(platform === "ios" || platform === "macos") && (
+                  <Pill tone="safe" style={{ marginLeft: 6 }}>
+                    Ваше устройство
+                  </Pill>
+                )}
               </span>
-              <InstallAction platform="ios" current={platform} canInstall={canInstall} isIOS={isIOS} install={install} />
+              <InstallAction
+                platform="ios"
+                current={platform}
+                canInstall={canInstall}
+                isIOS={isIOS}
+                install={install}
+              />
             </div>
           </div>
           <div className="about-row">
-            <div className="about-row-icon"><IconTelegram /></div>
+            <div className="about-row-icon">
+              <IconTelegram />
+            </div>
             <div className="about-row-body">
               <span className="about-row-label">Telegram-бот</span>
               <a
-                href="https://t.me/VantoryxBot"
+                href="https://t.me/vantoryx_tg_bot"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="about-row-link"
               >
-                @VantoryxBot
+                @vantoryx_tg_bot
                 <IconExternal />
               </a>
             </div>
@@ -158,7 +265,9 @@ export function AboutPage() {
             </div>
             <div className="about-row-body">
               <span className="about-row-label">ИИ</span>
-              <span className="about-row-value">GPT-4o-mini + Whisper tiny</span>
+              <span className="about-row-value">
+                GPT-4o-mini + Whisper tiny
+              </span>
             </div>
           </div>
           <div className="about-row">
@@ -167,7 +276,9 @@ export function AboutPage() {
             </div>
             <div className="about-row-body">
               <span className="about-row-label">Frontend</span>
-              <span className="about-row-value">React 19 + Vite + TypeScript</span>
+              <span className="about-row-value">
+                React 19 + Vite + TypeScript
+              </span>
             </div>
           </div>
           <div className="about-row">
@@ -230,17 +341,38 @@ export function AboutPage() {
       <Card title="Команда">
         <div className="about-section" style={{ gap: 4 }}>
           {[
-            { initial: "A", name: "Амир", role: "Главный разработчик", tg: "new26qwerty" },
-            { initial: "M", name: "Муниса", role: "Дизайнер", tg: "mnsrahimova" },
-            { initial: "R", name: "Рухсора", role: "Технический писатель", tg: "rukhhsora" },
+            {
+              initial: "A",
+              name: "Амир",
+              role: "Главный разработчик",
+              tg: "new26qwerty",
+            },
+            {
+              initial: "M",
+              name: "Муниса",
+              role: "UI/UX Дизайнер, Project meneger",
+              tg: "mnsrahimova",
+            },
+            {
+              initial: "R",
+              name: "Рухсора",
+              role: "Технический писатель",
+              tg: "rukhhsora",
+            },
           ].map((m) => (
             <div key={m.name} className="about-row">
               <div className="about-dev-avatar">{m.initial}</div>
               <div className="about-row-body">
-                <span className="about-row-label">{m.name} — {m.role}</span>
-                <a href={`https://t.me/${m.tg}`} target="_blank" rel="noopener noreferrer" className="about-row-link">
-                  <IconTelegram />
-                  @{m.tg}
+                <span className="about-row-label">
+                  {m.name} — {m.role}
+                </span>
+                <a
+                  href={`https://t.me/${m.tg}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="about-row-link"
+                >
+                  <IconTelegram />@{m.tg}
                   <IconExternal />
                 </a>
               </div>
@@ -252,7 +384,9 @@ export function AboutPage() {
       <Card title="Приватность" fullWidth>
         <div className="prose">
           <p>
-            Регистрация не нужна. Личные данные не храним. Каждый запрос — отдельный, без истории. Не вводите настоящие пароли, коды из SMS и номера карт.
+            Регистрация не нужна. Личные данные не храним. Каждый запрос —
+            отдельный, без истории. Не вводите настоящие пароли, коды из SMS и
+            номера карт.
           </p>
           <p>
             Текст уходит на сервер только для анализа и удаляется после ответа.
