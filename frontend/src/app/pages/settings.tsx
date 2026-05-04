@@ -1,13 +1,23 @@
 import { useTheme } from "../../lib/theme";
 import { Card, Grid } from "../../ui/components";
-import { IconCheck, IconDevice, IconInfo, IconMoon, IconPerson, IconShield, IconStar, IconSun } from "../../ui/icons";
+import {
+  IconCheck,
+  IconDevice,
+  IconInfo,
+  IconLinux,
+  IconMoon,
+  IconPerson,
+  IconShield,
+  IconStar,
+  IconSun,
+} from "../../ui/icons";
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
 
   return (
     <Grid>
-      <Card
+      {/* <Card
         title="Внешний вид"
         hint="Настройте отображение приложения под себя"
         fullWidth
@@ -42,13 +52,15 @@ export function SettingsPage() {
             </div>
           </div>
         </div>
-      </Card>
+      </Card> */}
 
       <Card title="Конфиденциальность и данные" fullWidth>
         <div className="settings-group">
           <div className="settings-info-block">
             <div className="settings-info-item">
-              <span className="settings-info-icon"><IconCheck /></span>
+              <span className="settings-info-icon">
+                <IconCheck />
+              </span>
               <div>
                 <div className="settings-row__label">Анонимность</div>
                 <div className="settings-row__desc">
@@ -57,20 +69,26 @@ export function SettingsPage() {
               </div>
             </div>
             <div className="settings-info-item">
-              <span className="settings-info-icon"><IconShield /></span>
+              <span className="settings-info-icon">
+                <IconShield />
+              </span>
               <div>
                 <div className="settings-row__label">Обработка запросов</div>
                 <div className="settings-row__desc">
-                  Тексты передаются на сервер только для обработки ИИ-моделью и не сохраняются после ответа
+                  Тексты передаются на сервер только для обработки ИИ-моделью и
+                  не сохраняются после ответа
                 </div>
               </div>
             </div>
             <div className="settings-info-item">
-              <span className="settings-info-icon"><IconInfo /></span>
+              <span className="settings-info-icon">
+                <IconInfo />
+              </span>
               <div>
                 <div className="settings-row__label">Важно</div>
                 <div className="settings-row__desc">
-                  Не вводите реальные пароли, коды из SMS или номера банковских карт в поля ввода
+                  Не вводите реальные пароли, коды из SMS или номера банковских
+                  карт в поля ввода
                 </div>
               </div>
             </div>
@@ -82,24 +100,41 @@ export function SettingsPage() {
         <div className="settings-group">
           <div className="settings-info-block">
             <div className="settings-info-item">
-              <span className="settings-info-icon"><IconDevice /></span>
+              <span className="settings-info-icon">
+                <IconDevice />
+              </span>
               <div>
                 <div className="settings-row__label">Приложение</div>
-                <div className="settings-row__desc">Vantoryx — Защита от мошенников с помощью ИИ</div>
+                <div className="settings-row__desc">
+                  Vantoryx — Защита от мошенников с помощью ИИ
+                </div>
               </div>
             </div>
             <div className="settings-info-item">
-              <span className="settings-info-icon"><IconStar /></span>
+              <span className="settings-info-icon">
+                <IconStar />
+              </span>
               <div>
                 <div className="settings-row__label">Версия</div>
                 <div className="settings-row__desc">v0.1.0</div>
               </div>
             </div>
             <div className="settings-info-item">
-              <span className="settings-info-icon"><IconPerson /></span>
+              <span className="settings-info-icon">
+                <IconPerson />
+              </span>
               <div>
                 <div className="settings-row__label">Разработчик</div>
                 <div className="settings-row__desc">MrRooty aka Amir</div>
+              </div>
+            </div>
+            <div className="settings-info-item">
+              <span className="settings-info-icon">
+                <IconLinux />
+              </span>
+              <div>
+                <div className="settings-row__label">Деплой</div>
+                <div className="settings-row__desc">Ubuntu 22.04 LTS · TLS 1.3</div>
               </div>
             </div>
           </div>

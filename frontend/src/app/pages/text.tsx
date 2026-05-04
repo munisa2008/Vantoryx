@@ -33,13 +33,13 @@ function TextResult({ data }: { data: TextScamResponse }) {
       <RiskBar score={data.risk_score} />
 
       {data.short_explanation && (
-        <ResultSection title="Заключение">
+        <ResultSection title="Вывод">
           <ResultText>{data.short_explanation}</ResultText>
         </ResultSection>
       )}
 
       {data.reasons.length > 0 && (
-        <ResultSection title="Признаки опасности">
+        <ResultSection title="Что насторожило">
           <ResultList items={data.reasons} variant="negative" />
         </ResultSection>
       )}
@@ -69,9 +69,9 @@ export function TextPage() {
 
   const info = (
     <>
-      <p>Режим анализирует текст сообщения и оценивает риск по трём уровням: <strong>Безопасно</strong>, <strong>Подозрительно</strong>, <strong>Мошенничество</strong>.</p>
-      <p>ИИ выделяет опасные фразы, объясняет причины и даёт краткое резюме. Подходит для проверки SMS, переписки в мессенджерах и писем.</p>
-      <p>Совет: вставляйте сообщение целиком, включая контекст — это повышает точность оценки.</p>
+      <p>Оценим риск сообщения и поставим один из трёх вердиктов: <strong>Безопасно</strong>, <strong>Подозрительно</strong>, <strong>Мошенничество</strong>.</p>
+      <p>Покажем опасные фразы, причины и короткое резюме. Подходит для SMS, переписок и писем.</p>
+      <p>Совет: вставляйте сообщение целиком — точнее анализ.</p>
     </>
   );
 
@@ -79,17 +79,17 @@ export function TextPage() {
     <Grid>
       <Card
         title="Проверка текста"
-        hint="Вставьте подозрительное сообщение — ИИ оценит риск, объяснит причины и даст заключение."
+        hint="Вставьте сообщение — оценим риск, покажем опасные фразы и объясним почему."
         info={info}
       >
-        <TextArea value={input} onChange={setInput} placeholder="Вставьте текст…" />
+        <TextArea value={input} onChange={setInput} placeholder="Вставьте сюда текст…" />
 
         <Row wrap>
-          <Button onClick={run} disabled={!input.trim() || res.status === "loading"}>
+          <Button variant="primary" onClick={run} disabled={!input.trim() || res.status === "loading"}>
             <IconShield />
             Проверить
           </Button>
-          {res.status === "loading" ? <Pill tone="warn">Анализирую…</Pill> : null}
+          {res.status === "loading" ? <Pill tone="warn">Анализируем…</Pill> : null}
           {res.status === "ok" ? verdictPill : null}
           {res.status === "error" ? <Pill tone="danger">{res.error}</Pill> : null}
         </Row>

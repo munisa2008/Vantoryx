@@ -6,59 +6,58 @@ export function HomePage() {
   return (
     <Grid>
       <Card
-        title="Добро пожаловать"
-        hint="Vantoryx помогает выявить мошенничество до того, как вы потеряете деньги или данные. Выберите режим ниже или в меню."
+        title="Vantoryx"
+        hint="Защитим вас от мошенников. Проверим текст, ссылки и звонки за секунды — до того, как вы что-то потеряете."
         fullWidth
       >
         <Row wrap>
-          <Pill tone="neutral">Начните с «Проверка текста»</Pill>
-          <Pill tone="neutral">Для ссылок — «Проверка ссылок»</Pill>
-          <Pill tone="safe">Данные не сохраняются</Pill>
+          <Pill tone="neutral">Не знаете с чего начать? — «Текст»</Pill>
+          <Pill tone="safe">Ничего не сохраняем</Pill>
         </Row>
       </Card>
 
-      <Card title="Режимы" hint="Выберите инструмент для анализа." fullWidth>
+      <Card title="Инструменты" hint="Выберите подходящий — каждый под свою задачу." fullWidth>
         <div className="tiles">
           <Link className="tile" to="/text">
             <IconShield />
             <div>
-              <div className="tile__t">Проверка текста</div>
-              <div className="tile__d">Оценка риска и причины</div>
+              <div className="tile__t">Текст</div>
+              <div className="tile__d">Оценим риск сообщения</div>
             </div>
           </Link>
           <Link className="tile" to="/links">
             <IconLink />
             <div>
-              <div className="tile__t">Проверка ссылок</div>
-              <div className="tile__d">Извлечение URL и риск</div>
+              <div className="tile__t">Ссылки</div>
+              <div className="tile__d">Найдём подозрительные URL</div>
             </div>
           </Link>
           <Link className="tile" to="/what-to-reply">
             <IconMessage />
             <div>
               <div className="tile__t">Что ответить</div>
-              <div className="tile__d">Безопасный ответ и чеклист</div>
+              <div className="tile__d">Готовый безопасный ответ</div>
             </div>
           </Link>
           <Link className="tile" to="/rewrite">
             <IconWand />
             <div>
-              <div className="tile__t">Переписать честно</div>
-              <div className="tile__d">Раскрыть истинный смысл</div>
+              <div className="tile__t">Истинный смысл</div>
+              <div className="tile__d">Раскроем уловки в тексте</div>
             </div>
           </Link>
           <Link className="tile" to="/reverse">
             <IconTimer />
             <div>
               <div className="tile__t">Обратный фишинг</div>
-              <div className="tile__d">Тянущий время ответ</div>
+              <div className="tile__d">Потяните время — узнаем больше</div>
             </div>
           </Link>
           <Link className="tile" to="/audio">
             <IconMic />
             <div>
               <div className="tile__t">Аудио</div>
-              <div className="tile__d">Запись и анализ разговора</div>
+              <div className="tile__d">Анализ разговора по записи</div>
             </div>
           </Link>
         </div>

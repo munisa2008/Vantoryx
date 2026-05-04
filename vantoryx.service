@@ -1,0 +1,37 @@
+[Unit]
+Description=Vantoryx Django ASGI
+After=network.target redis.service
+Requires=redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/srv/vantoryx
+EnvironmentFile=/srv/vantoryx/.env
+
+# Intel CPU tuning — 2 vCPU Premium Intel
+Environment=OMP_NUM_THREADS=2
+Environment=MKL_NUM_THREADS=2
+Environment=OPENBLAS_NUM_THREADS=2
+Environment=KMP_BLOCKTIME=0
+Environment=KMP_AFFINITY=granularity=fine,compact,1,0
+Environment=MALLOC_MMAP_THRESHOLD_=131072
+Environment=MALLOC_TRIM_THRESHOLD_=131072
+
+ExecStart=/srv/vantoryx/.venv/bin/daphne \
+    -b 0.0.0.0 \
+    -p 8000 \
+    config.asgi:application
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Use all 8 GB RAM; OOM-kill this before system processes
+MemoryMax=7G
+OOMScoreAdjust=200
+
+[Install]
+WantedBy=multi-user.target

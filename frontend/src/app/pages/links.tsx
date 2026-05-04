@@ -38,13 +38,13 @@ function LinksResult({ data }: { data: LinkAnalysisResponse }) {
       <RiskBar score={data.risk_score} />
 
       {data.ai_conclusion && (
-        <ResultSection title="Заключение ИИ">
+        <ResultSection title="Вывод">
           <ResultText>{data.ai_conclusion}</ResultText>
         </ResultSection>
       )}
 
       {data.items.length > 0 && (
-        <ResultSection title="Детали по ссылкам">
+        <ResultSection title="По каждой ссылке">
           <div className="url-list">
             {data.items.map((item, i) => (
               <div key={i} className="url-item">
@@ -89,8 +89,8 @@ export function LinksPage() {
 
   const info = (
     <>
-      <p>Режим извлекает все URL из текста и оценивает каждую ссылку по признакам фишинга: укороченные домены, подозрительные параметры, имитация известных сервисов.</p>
-      <p>Итоговый вердикт: <strong>Безопасно</strong>, <strong>Подозрительно</strong> или <strong>Опасно</strong>. Вставьте любой текст со ссылками — режим извлечёт их автоматически.</p>
+      <p>Найдём все URL в тексте и оценим каждый: короткие домены, странные параметры, подделки под известные сайты.</p>
+      <p>Вердикт — <strong>Безопасно</strong>, <strong>Подозрительно</strong> или <strong>Опасно</strong>. Просто вставьте текст со ссылками.</p>
     </>
   );
 
@@ -98,17 +98,17 @@ export function LinksPage() {
     <Grid>
       <Card
         title="Проверка ссылок"
-        hint="Вставьте текст с подозрительными ссылками — ИИ извлечёт адреса и оценит каждый на признаки фишинга."
+        hint="Найдём адреса в тексте и проверим каждый на фишинг."
         info={info}
       >
-        <TextArea value={input} onChange={setInput} placeholder="Вставьте текст со ссылками…" />
+        <TextArea value={input} onChange={setInput} placeholder="Вставьте сюда текст со ссылками…" />
 
         <Row wrap>
-          <Button onClick={run} disabled={!input.trim() || res.status === "loading"}>
+          <Button variant="primary" onClick={run} disabled={!input.trim() || res.status === "loading"}>
             <IconLink />
             Проверить
           </Button>
-          {res.status === "loading" ? <Pill tone="warn">Анализирую…</Pill> : null}
+          {res.status === "loading" ? <Pill tone="warn">Проверяем…</Pill> : null}
           {res.status === "ok" ? verdictPill : null}
           {res.status === "error" ? <Pill tone="danger">{res.error}</Pill> : null}
         </Row>

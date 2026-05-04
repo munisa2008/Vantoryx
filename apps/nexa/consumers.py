@@ -9,6 +9,11 @@ from django.conf import settings
 from .transcribe import transcribe_with_whisper_local
 
 
+_CHUNK_BYTES = 16_000
+
+_TMP_DIR = "/dev/shm" if os.path.isdir("/dev/shm") else tempfile.gettempdir()
+
+
 class TranscribeConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
@@ -25,13 +30,15 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
             self.audio_chunks.append(bytes_data)
             self.pending_size += len(bytes_data)
 
-            if self.pending_size >= 200_000:
+            if self.pending_size >= _CHUNK_BYTES and not self.processing:
+                self.processing = True
                 await self.flush_and_transcribe()
 
         elif text_data:
             data = json.loads(text_data)
             if data.get("type") == "stop":
-                if self.audio_chunks:
+                if self.audio_chunks and not self.processing:
+                    self.processing = True
                     await self.flush_and_transcribe()
                 await self.classify()
 
@@ -40,7 +47,7 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
         self.audio_chunks = []
         self.pending_size = 0
 
-        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False, dir=_TMP_DIR) as f:
             f.write(chunk_data)
             tmp_path = f.name
 
@@ -59,7 +66,7 @@ class TranscribeConsumer(AsyncWebsocketConsumer):
                     "text": text.strip(),
                     "full": self.full_transcript.strip(),
                 }))
-        except Exception as e:
+        except Exception:
             pass
         finally:
             self.processing = False

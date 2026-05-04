@@ -1,0 +1,12 @@
+.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+.env
+.env.docker
+db.sqlite3
+frontend/node_modules/
+.git/
+*.zip
+.frontend/
+frontend.zip

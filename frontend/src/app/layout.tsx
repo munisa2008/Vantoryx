@@ -11,29 +11,76 @@ import {
   IconMic,
   IconPerson,
   IconPulse,
-  IconSettings,
+  // IconSettings,
   IconShield,
   IconTimer,
   IconWand,
 } from "../ui/icons";
+import { usePWAInstall } from "../lib/pwa";
 
 const allNav = [
-  { to: "/", label: "Обзор", desc: "Главная страница", icon: <IconHome /> },
-  { to: "/status", label: "Статус", desc: "Доступность сервера и ИИ", icon: <IconPulse /> },
-  { to: "/text", label: "Проверка текста", desc: "Анализ сообщений на мошенничество", icon: <IconShield /> },
-  { to: "/links", label: "Проверка ссылок", desc: "Извлечение и оценка URL", icon: <IconLink /> },
-  { to: "/what-to-reply", label: "Что ответить", desc: "Безопасный ответ на подозрительное сообщение", icon: <IconMessage /> },
-  { to: "/rewrite", label: "Переписать честно", desc: "Раскрыть манипулятивный текст", icon: <IconWand /> },
-  { to: "/reverse", label: "Обратный фишинг", desc: "Тянущий время ответ + самопроверка", icon: <IconTimer /> },
-  { to: "/audio", label: "Аудио", desc: "Запись и анализ разговора", icon: <IconMic /> },
-  { to: "/history", label: "История", desc: "Последние проверки из всех режимов", icon: <IconHistory /> },
-  { to: "/help", label: "Справка", desc: "Как использовать приложение", icon: <IconInfo /> },
-  { to: "/about", label: "О приложении", desc: "Разработчик и технологии", icon: <IconPerson /> },
-  { to: "/settings", label: "Настройки", desc: "Тема и параметры приложения", icon: <IconSettings /> },
+  { to: "/", label: "Главная", icon: <IconHome /> },
+  { to: "/status", label: "Статус", icon: <IconPulse /> },
+  { to: "/text", label: "Текст", icon: <IconShield /> },
+  { to: "/links", label: "Ссылки", icon: <IconLink /> },
+  { to: "/what-to-reply", label: "Что ответить", icon: <IconMessage /> },
+  { to: "/rewrite", label: "Истинный смысл", icon: <IconWand /> },
+  { to: "/reverse", label: "Обратный фишинг", icon: <IconTimer /> },
+  { to: "/audio", label: "Аудио", icon: <IconMic /> },
+  { to: "/history", label: "История", icon: <IconHistory /> },
+  { to: "/help", label: "Справка", icon: <IconInfo /> },
+  { to: "/about", label: "О приложении", icon: <IconPerson /> },
+  // {
+  //   to: "/settings",
+  //   label: "Настройки",
+  //   // desc: "Тема и параметры приложения",
+  //   icon: <IconSettings />,
+  // },
 ];
+// const allNav = [
+//   { to: "/", label: "Обзор", desc: "Главная страница", icon: <IconHome /> },
+//   { to: "/status", label: "Статус", desc: "Доступность сервера и ИИ", icon: <IconPulse /> },
+//   { to: "/text", label: "Проверка текста", desc: "Анализ сообщений на мошенничество", icon: <IconShield /> },
+//   { to: "/links", label: "Проверка ссылок", desc: "Извлечение и оценка URL", icon: <IconLink /> },
+//   { to: "/what-to-reply", label: "Что ответить", desc: "Безопасный ответ на подозрительное сообщение", icon: <IconMessage /> },
+//   { to: "/rewrite", label: "Переписать честно", desc: "Раскрыть манипулятивный текст", icon: <IconWand /> },
+//   { to: "/reverse", label: "Обратный фишинг", desc: "Тянущий время ответ + самопроверка", icon: <IconTimer /> },
+//   { to: "/audio", label: "Аудио", desc: "Запись и анализ разговора", icon: <IconMic /> },
+//   { to: "/history", label: "История", desc: "Последние проверки из всех режимов", icon: <IconHistory /> },
+//   { to: "/help", label: "Справка", desc: "Как использовать приложение", icon: <IconInfo /> },
+//   { to: "/about", label: "О приложении", desc: "Разработчик и технологии", icon: <IconPerson /> },
+//   { to: "/settings", label: "Настройки", desc: "Тема и параметры приложения", icon: <IconSettings /> },
+// ];
 
 // Bottom nav: 4 main + "More" button
 const bottomNavItems = [allNav[0], allNav[2], allNav[3], allNav[7]];
+
+function PWAInstallBanner() {
+  const { showBanner, canInstall, isIOS, install, dismiss } = usePWAInstall();
+  if (!showBanner) return null;
+
+  return (
+    <div className="pwa-banner" role="region" aria-label="Установить приложение">
+      <div className="pwa-banner__icon" aria-hidden="true" />
+      <div className="pwa-banner__text">
+        <span className="pwa-banner__title">Установить Vantoryx</span>
+        {isIOS ? (
+          <span className="pwa-banner__hint">Safari → Поделиться → На экран «Домой»</span>
+        ) : (
+          <span className="pwa-banner__hint">Работает офлайн · Быстрее сайта</span>
+        )}
+      </div>
+      {canInstall && (
+        <button className="btn btn--primary pwa-banner__btn" onClick={install}>
+          Установить
+        </button>
+      )}
+      <button className="icon-btn pwa-banner__close" onClick={dismiss} aria-label="Закрыть">
+        <IconClose />
+      </button>
+    </div>
+  );
+}
 
 export function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -57,13 +104,18 @@ export function Layout() {
   }, [drawerOpen]);
 
   const currentPage = allNav.find((n) =>
-    n.to === "/" ? location.pathname === "/" : location.pathname.startsWith(n.to)
+    n.to === "/"
+      ? location.pathname === "/"
+      : location.pathname.startsWith(n.to),
   );
 
   return (
     <div className="app">
       {/* ── Navigation Drawer ── */}
-      <nav className={`nav-drawer${drawerOpen ? " nav-drawer--open" : ""}`} aria-label="Навигация">
+      <nav
+        className={`nav-drawer${drawerOpen ? " nav-drawer--open" : ""}`}
+        aria-label="Навигация"
+      >
         <div className="nav-drawer__header">
           <div className="brand">
             <span className="brand__dot" />
@@ -84,19 +136,23 @@ export function Layout() {
               key={item.to}
               to={item.to}
               end={item.to === "/"}
-              className={({ isActive }) => `nav__item${isActive ? " nav__item--active" : ""}`}
+              className={({ isActive }) =>
+                `nav__item${isActive ? " nav__item--active" : ""}`
+              }
             >
               {item.icon}
               <div className="nav__item-text">
                 <span className="nav__label">{item.label}</span>
-                <span className="nav__desc">{item.desc}</span>
+                {/* <span className="nav__desc">{item.desc}</span> */}
               </div>
             </NavLink>
           ))}
         </div>
 
         <div className="nav-drawer__footer">
-          <span className="nav-drawer__privacy">Конфиденциально — данные не сохраняются</span>
+          <span className="nav-drawer__privacy">
+            Приватно — мы ничего не сохраняем
+          </span>
         </div>
       </nav>
 
@@ -118,10 +174,12 @@ export function Layout() {
           >
             <IconMenu />
           </button>
-          <span className="topbar__title">{currentPage?.label ?? "Vantoryx"}</span>
-          <div className="topbar__right">
+          <span className="topbar__title">
+            {currentPage?.label ?? "Vantoryx"}
+          </span>
+          {/* <div className="topbar__right">
             <span className="topbar__hint">Конфиденциально</span>
-          </div>
+          </div> */}
         </header>
 
         {/* Content area with optional rail */}
@@ -133,7 +191,9 @@ export function Layout() {
                 key={item.to}
                 to={item.to}
                 end={item.to === "/"}
-                className={({ isActive }) => `rail__item${isActive ? " rail__item--active" : ""}`}
+                className={({ isActive }) =>
+                  `rail__item${isActive ? " rail__item--active" : ""}`
+                }
                 title={item.label}
               >
                 <span className="rail__indicator">{item.icon}</span>
@@ -148,6 +208,8 @@ export function Layout() {
         </div>
       </div>
 
+      <PWAInstallBanner />
+
       {/* ── Bottom Navigation (mobile only) ── */}
       <nav className="bottom-nav" aria-label="Основная навигация">
         {bottomNavItems.map((item) => (
@@ -155,7 +217,9 @@ export function Layout() {
             key={item.to}
             to={item.to}
             end={item.to === "/"}
-            className={({ isActive }) => `bottom-nav__item${isActive ? " bottom-nav__item--active" : ""}`}
+            className={({ isActive }) =>
+              `bottom-nav__item${isActive ? " bottom-nav__item--active" : ""}`
+            }
           >
             <span className="bottom-nav__indicator">{item.icon}</span>
             <span className="bottom-nav__label">{item.label}</span>

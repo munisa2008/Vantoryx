@@ -26,7 +26,7 @@ export function Grid(props: { children: ReactNode }) {
 }
 
 export function Card(props: {
-  title: string;
+  title: ReactNode;
   hint?: string;
   children: ReactNode;
   tone?: "neutral" | "danger" | "safe";
@@ -145,7 +145,7 @@ export function SplashScreen(props: { onDone: () => void }) {
           <IconShieldLarge />
         </div>
         <div className="splash__name">Vantoryx</div>
-        <div className="splash__tagline">Защита от мошенников</div>
+        <div className="splash__tagline">Защита от мошенников за секунды</div>
       </div>
     </div>
   );

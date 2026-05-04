@@ -258,6 +258,70 @@ export function IconExternal() {
   );
 }
 
+export function IconAndroid() {
+  return (
+    <I>
+      <svg viewBox="0 0 24 24" fill="none">
+        {/* antennas */}
+        <path d="M8.5 8.5L6.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M15.5 8.5L17.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        {/* head: dome (arc across top) + rectangular body */}
+        <path d="M4 16a8 8 0 0 1 16 0v3H4v-3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        {/* eyes */}
+        <circle cx="9.5" cy="16.5" r="1" fill="currentColor" />
+        <circle cx="14.5" cy="16.5" r="1" fill="currentColor" />
+        {/* arms */}
+        <path d="M1.5 15h2.5M20 15h2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </I>
+  );
+}
+
+export function IconWindows() {
+  return (
+    <I>
+      {/* Windows flag: 4 panes with perspective skew, filled */}
+      <svg viewBox="0 0 24 24">
+        <path d="M2.5 8.5V13H11V7L2.5 8.5Z" fill="currentColor" />
+        <path d="M2.5 14V18.5L11 17V14H2.5Z" fill="currentColor" />
+        <path d="M12 6.8V13H21.5V5.5L12 6.8Z" fill="currentColor" />
+        <path d="M12 14V17.2L21.5 18.5V14H12Z" fill="currentColor" />
+      </svg>
+    </I>
+  );
+}
+
+export function IconLinux() {
+  return (
+    <I>
+      {/* Terminal window — universally understood as Linux */}
+      <svg viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="3" width="20" height="18" rx="2.5" stroke="currentColor" strokeWidth="2" />
+        <path d="M2 8.5h20" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="5.5" cy="5.75" r="1" fill="currentColor" />
+        <circle cx="9" cy="5.75" r="1" fill="currentColor" />
+        {/* > prompt */}
+        <path d="M7 13.5l3 2-3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* cursor _ */}
+        <path d="M13 17.5h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </I>
+  );
+}
+
+export function IconApple() {
+  return (
+    <I>
+      <svg viewBox="0 0 24 24" fill="none">
+        {/* leaf */}
+        <path d="M12 6C12 4 13.5 2.5 15.5 2.5C15.5 4.5 14 6 12 6Z" fill="currentColor" />
+        {/* apple body: characteristic shape with bite on upper-right */}
+        <path d="M8.5 8C6 8 3.5 10.5 3.5 14C3.5 17.5 6 22 9 22C10 22 10.8 21.5 12 21.5C13.2 21.5 14 22 15 22C18 22 20.5 17.5 20.5 14C20.5 10.5 18 8 15.5 8C14.5 8 13.5 8.5 12 8.5C10.5 8.5 9.5 8 8.5 8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      </svg>
+    </I>
+  );
+}
+
 // Large version for splash screen (no wrapper span)
 export function IconShieldLarge() {
   return (

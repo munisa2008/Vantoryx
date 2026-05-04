@@ -23,16 +23,16 @@ export function StatusPage() {
     <Grid>
       <Card
         title="Статус сервиса"
-        hint="Проверяет доступность сервера перед работой с режимами."
-        info={<p>Отправляет ping-запрос на сервер и показывает ответ. Если сервер недоступен, остальные режимы не будут работать. Проверьте статус перед первым использованием или при ошибках.</p>}
+        hint="Убедимся, что сервер на связи — иначе остальные инструменты не сработают."
+        info={<p>Один ping-запрос на сервер. Если ответа нет — анализ работать не будет. Проверьте статус перед использованием или при ошибках.</p>}
       >
         <Row wrap>
           <Button onClick={run} disabled={ping.status === "loading"}>
             <IconPulse />
             Проверить соединение
           </Button>
-          {ping.status === "loading" ? <Pill tone="warn">Проверяю…</Pill> : null}
-          {ping.status === "error" ? <Pill tone="danger">Сервер недоступен</Pill> : null}
+          {ping.status === "loading" ? <Pill tone="warn">Проверяем…</Pill> : null}
+          {ping.status === "error" ? <Pill tone="danger">Нет связи</Pill> : null}
         </Row>
 
         {ping.status === "ok" ? (
@@ -40,7 +40,7 @@ export function StatusPage() {
             <div className="status-ok">
               <div className="status-ok__icon">✓</div>
               <div className="status-ok__body">
-                <div className="status-ok__title">Сервер работает</div>
+                <div className="status-ok__title">Сервер на связи</div>
                 {ping.data.message && (
                   <div className="status-ok__msg">{ping.data.message}</div>
                 )}
