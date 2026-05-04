@@ -108,16 +108,15 @@ export function AboutPage() {
               label: "Telegram-бот",
               href: "https://t.me/vantoryx_tg_bot",
             },
-            // { icon: <IconPulse />, label: "API", href: "https://vantoryx.up.railway.app/api/" },
             {
               icon: <IconPulse />,
               label: "API",
-              href: "https://www.django-rest-framework.org/api/",
+              href: "https://api.vantoryx.tech/api/",
             },
             {
               icon: <IconCode />,
               label: "Схема API",
-              href: "https://www.django-rest-framework.org/api/",
+              href: "https://api.vantoryx.tech/api/schema/",
             },
           ].map((item) => (
             <div key={item.label} className="about-row">

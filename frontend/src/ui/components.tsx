@@ -105,8 +105,8 @@ export function Select<T extends string>(props: {
   );
 }
 
-export function Pill(props: { tone?: "neutral" | "safe" | "warn" | "danger"; children: ReactNode }) {
-  return <span className={cx("pill", props.tone ? `pill--${props.tone}` : "pill--neutral")}>{props.children}</span>;
+export function Pill(props: { tone?: "neutral" | "safe" | "warn" | "danger"; children: ReactNode; style?: React.CSSProperties }) {
+  return <span className={cx("pill", props.tone ? `pill--${props.tone}` : "pill--neutral")} style={props.style}>{props.children}</span>;
 }
 
 export function CodeBox(props: { children: ReactNode }) {
