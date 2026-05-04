@@ -99,7 +99,7 @@ class AudioTaskDetailView(generics.RetrieveAPIView):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def ping(request):
-    return Response({"message": "Nexa API is working!"})
+    return Response({"message": "API is working!"})
 
 
 @api_view(["POST"])

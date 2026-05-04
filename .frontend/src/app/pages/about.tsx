@@ -88,7 +88,7 @@ export function AboutPage() {
             <div className="about-row-body">
               <span className="about-row-label">Telegram-бот</span>
               <a
-                href="https://t.me/VantoryxBot"
+                href="https://t.me/vantoryx_tg_bot"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="about-row-link"
@@ -103,7 +103,7 @@ export function AboutPage() {
             <div className="about-row-body">
               <span className="about-row-label">API</span>
               <a
-                href="https://vantoryx.up.railway.app/api/"
+                href="https://vantoryx.tech/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="about-row-link"
@@ -118,7 +118,7 @@ export function AboutPage() {
             <div className="about-row-body">
               <span className="about-row-label">Схема API</span>
               <a
-                href="https://vantoryx.up.railway.app/api/schema/"
+                href="https://vantoryx.tech"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="about-row-link"
