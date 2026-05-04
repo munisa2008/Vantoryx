@@ -1,19 +1,15 @@
-import { useTheme } from "../../lib/theme";
 import { Card, Grid } from "../../ui/components";
 import {
   IconCheck,
   IconDevice,
   IconInfo,
   IconLinux,
-  IconMoon,
   IconPerson,
   IconShield,
   IconStar,
-  IconSun,
 } from "../../ui/icons";
 
 export function SettingsPage() {
-  const { theme, setTheme } = useTheme();
 
   return (
     <Grid>
