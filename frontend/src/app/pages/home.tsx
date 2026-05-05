@@ -1,10 +1,16 @@
 import { Link } from "react-router-dom";
 import { Card, Grid, Pill, Row } from "../../ui/components";
 import { IconLink, IconMessage, IconMic, IconShield, IconTimer, IconWand } from "../../ui/icons";
+import { usePageMeta } from "../../lib/meta";
 
 export function HomePage() {
+  usePageMeta({
+    title: "Vantoryx — защита от мошенников",
+    description: "ИИ-сервис защиты от мошенников. Проверяйте тексты, ссылки и звонки — быстро, бесплатно, без регистрации.",
+  });
   return (
     <Grid>
+      <h1 className="sr-only">Vantoryx — защита от мошенников</h1>
       <Card
         title="Vantoryx"
         hint="Защитим вас от мошенников. Проверим текст, ссылки и звонки за секунды — до того, как вы что-то потеряете."

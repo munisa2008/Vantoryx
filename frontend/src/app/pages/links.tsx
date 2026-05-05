@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { api, type LinkAnalysisResponse } from "../../lib/api";
+import { usePageMeta } from "../../lib/meta";
 import {
   Button, Card, Grid, Pill, ResultList, ResultSection,
   ResultText, RiskBar, Row, TextArea,
@@ -68,6 +69,10 @@ function LinksResult({ data }: { data: LinkAnalysisResponse }) {
 }
 
 export function LinksPage() {
+  usePageMeta({
+    title: "Проверка ссылок на фишинг | Vantoryx",
+    description: "Вставьте текст со ссылками — найдём все URL и проверим каждый на фишинг и мошенничество.",
+  });
   const [input, setInput] = useState("");
   const [res, setRes] = useState<Busy<LinkAnalysisResponse>>({ status: "idle" });
 
@@ -96,6 +101,7 @@ export function LinksPage() {
 
   return (
     <Grid>
+      <h1 className="sr-only">Проверка ссылок на фишинг</h1>
       <Card
         title="Проверка ссылок"
         hint="Найдём адреса в тексте и проверим каждый на фишинг."

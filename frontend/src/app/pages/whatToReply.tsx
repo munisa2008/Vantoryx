@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api, type WhatToReplyResponse } from "../../lib/api";
+import { usePageMeta } from "../../lib/meta";
 import {
   Button, Card, Grid, MessageBox, Pill, ResultList,
   ResultSection, Row, TextArea,
@@ -29,6 +30,10 @@ function ReplyResult({ data }: { data: WhatToReplyResponse }) {
 }
 
 export function WhatToReplyPage() {
+  usePageMeta({
+    title: "Что ответить на подозрительное сообщение | Vantoryx",
+    description: "Получите готовый безопасный ответ на подозрительное сообщение — без раскрытия личных данных.",
+  });
   const [input, setInput] = useState("");
   const [res, setRes] = useState<Busy<WhatToReplyResponse>>({ status: "idle" });
 
@@ -51,6 +56,7 @@ export function WhatToReplyPage() {
 
   return (
     <Grid>
+      <h1 className="sr-only">Что ответить на подозрительное сообщение</h1>
       <Card
         title="Что ответить"
         hint="Вставьте входящее подозрительное сообщение — ИИ составит безопасный ответ и подскажет, чего не делать."

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api, type HumanRewriteResponse } from "../../lib/api";
+import { usePageMeta } from "../../lib/meta";
 import {
   Button, Card, Grid, MessageBox, Pill, ResultSection,
   Row, TextArea,
@@ -33,6 +34,10 @@ function RewriteResult({ data }: { data: HumanRewriteResponse }) {
 }
 
 export function RewritePage() {
+  usePageMeta({
+    title: "Истинный смысл сообщения | Vantoryx",
+    description: "Раскройте манипуляции и уловки в подозрительном тексте — ИИ перепишет сообщение честно и объяснит намерение.",
+  });
   const [input, setInput] = useState("");
   const [res, setRes] = useState<Busy<HumanRewriteResponse>>({ status: "idle" });
 
@@ -55,6 +60,7 @@ export function RewritePage() {
 
   return (
     <Grid>
+      <h1 className="sr-only">Истинный смысл сообщения</h1>
       <Card
         title="Переписать честно"
         hint="Вставьте подозрительное сообщение — ИИ уберёт манипуляции и покажет его истинный смысл."

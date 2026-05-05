@@ -1,4 +1,5 @@
 import { Card, Grid, Pill } from "../../ui/components";
+import { usePageMeta } from "../../lib/meta";
 import {
   IconAndroid,
   IconApple,
@@ -76,6 +77,10 @@ function InstallAction({
 }
 
 export function AboutPage() {
+  usePageMeta({
+    title: "О приложении Vantoryx — ИИ против мошенников",
+    description: "Vantoryx — бесплатный ИИ-сервис защиты от мошенников. Команда, технологии, ссылки на GitHub и Telegram-бот.",
+  });
   const { canInstall, isIOS, platform, install } = usePWAInstall();
   return (
     <Grid>

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { api, type HistoryEntry, type HistoryEntryType } from "../../lib/api";
+import { usePageMeta } from "../../lib/meta";
 import { Button, Card, Grid, Pill, Row } from "../../ui/components";
 import {
   IconHistory,
@@ -179,6 +180,7 @@ const TYPE_FILTER_OPTIONS: Array<{ value: HistoryEntryType | "all"; label: strin
 ];
 
 export function HistoryPage() {
+  usePageMeta({ title: "История проверок | Vantoryx", noindex: true });
   const [state, setState] = useState<LoadState>({ status: "idle" });
   const [filter, setFilter] = useState<HistoryEntryType | "all">("all");
 

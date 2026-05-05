@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../../lib/api";
+import { usePageMeta } from "../../lib/meta";
 import { Button, Card, Grid, Pill, Row } from "../../ui/components";
 import { IconPulse } from "../../ui/icons";
 
@@ -7,6 +8,7 @@ type Busy<T> = { status: "idle" } | { status: "loading" } | { status: "ok"; data
 const toErr = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function StatusPage() {
+  usePageMeta({ title: "Статус сервиса | Vantoryx", noindex: true });
   const [ping, setPing] = useState<Busy<{ message: string }>>({ status: "idle" });
 
   async function run() {

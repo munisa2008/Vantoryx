@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { Card, Grid, Kbd } from "../../ui/components";
+import { usePageMeta } from "../../lib/meta";
 import { IconLink, IconMessage, IconMic, IconShield, IconTimer, IconWand } from "../../ui/icons";
 
 const modes: {
@@ -106,8 +107,13 @@ const modes: {
 ];
 
 export function HelpPage() {
+  usePageMeta({
+    title: "Справка — как пользоваться Vantoryx",
+    description: "Подробное руководство по всем инструментам Vantoryx: проверка текста, ссылок, звонков и генерация безопасных ответов.",
+  });
   return (
     <Grid>
+      <h1 className="sr-only">Справка по Vantoryx</h1>
       <Card
         title="С чего начать"
         hint="Короткий гид по инструментам Vantoryx."

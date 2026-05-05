@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { api, type ReversePhishingResponse } from "../../lib/api";
+import { usePageMeta } from "../../lib/meta";
 import {
   Button, Card, Grid, MessageBox, Pill, ResultList,
   ResultSection, Row, TextArea,
@@ -47,6 +48,10 @@ function ReverseResult({ data }: { data: ReversePhishingResponse }) {
 }
 
 export function ReversePage() {
+  usePageMeta({
+    title: "Обратный фишинг — тяните время | Vantoryx",
+    description: "Сгенерируйте нейтральный ответ-заглушку для мошенника — выиграйте время позвонить в банк или посоветоваться.",
+  });
   const [input, setInput] = useState("");
   const [res, setRes] = useState<Busy<ReversePhishingResponse>>({ status: "idle" });
 
@@ -75,6 +80,7 @@ export function ReversePage() {
 
   return (
     <Grid>
+      <h1 className="sr-only">Обратный фишинг — тяните время</h1>
       <Card
         title="Обратный фишинг"
         hint="Вставьте подозрительное сообщение — ИИ составит безопасный тянущий время ответ и проверит его на утечку данных."

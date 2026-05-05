@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api, type AudioTask } from "../../lib/api";
+import { usePageMeta } from "../../lib/meta";
 import { startRecording, type AudioSource, type Recording } from "../../lib/audio";
 import { msToClock } from "../../ui/ui";
 import {
@@ -45,6 +46,10 @@ function AudioResult({ data }: { data: AudioTask }) {
 }
 
 export function AudioPage() {
+  usePageMeta({
+    title: "Анализ аудио-звонков на мошенничество | Vantoryx",
+    description: "Запишите подозрительный звонок — ИИ расшифрует запись и проверит разговор на признаки мошенничества.",
+  });
   const [source, setSource] = useState<AudioSource>("mic");
   const [recState, setRecState] = useState<"idle" | "recording" | "stopping">("idle");
   const [recTimeMs, setRecTimeMs] = useState(0);
@@ -117,6 +122,7 @@ export function AudioPage() {
 
   return (
     <Grid>
+      <h1 className="sr-only">Анализ аудио-звонков на мошенничество</h1>
       <Card
         title="Аудио"
         hint="Запишите подозрительный разговор — ИИ расшифрует речь и оценит на признаки мошенничества."

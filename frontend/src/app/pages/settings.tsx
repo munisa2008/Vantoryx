@@ -1,4 +1,5 @@
 import { Card, Grid } from "../../ui/components";
+import { usePageMeta } from "../../lib/meta";
 import {
   IconCheck,
   IconDevice,
@@ -10,7 +11,7 @@ import {
 } from "../../ui/icons";
 
 export function SettingsPage() {
-
+  usePageMeta({ title: "Настройки | Vantoryx", noindex: true });
   return (
     <Grid>
       {/* <Card

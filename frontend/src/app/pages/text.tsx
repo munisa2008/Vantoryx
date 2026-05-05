@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { api, type TextScamResponse } from "../../lib/api";
+import { usePageMeta } from "../../lib/meta";
 import {
   Button, Card, Grid, Pill, ResultList,
   ResultSection, ResultText, RiskBar, Row, TextArea,
@@ -48,6 +49,10 @@ function TextResult({ data }: { data: TextScamResponse }) {
 }
 
 export function TextPage() {
+  usePageMeta({
+    title: "Проверка текста на мошенничество | Vantoryx",
+    description: "Вставьте SMS, письмо или сообщение — ИИ оценит риск мошенничества, выделит опасные фразы и даст вердикт.",
+  });
   const [input, setInput] = useState("");
   const [res, setRes] = useState<Busy<TextScamResponse>>({ status: "idle" });
 
@@ -77,6 +82,7 @@ export function TextPage() {
 
   return (
     <Grid>
+      <h1 className="sr-only">Проверка текста на мошенничество</h1>
       <Card
         title="Проверка текста"
         hint="Вставьте сообщение — оценим риск, покажем опасные фразы и объясним почему."
