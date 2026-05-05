@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { api, type AudioTask } from "../../lib/api";
 import { usePageMeta } from "../../lib/meta";
-import { startRecording, type AudioSource, type Recording } from "../../lib/audio";
+import { startStreamingRecorder, type AudioSource } from "../../lib/audio";
+import { getDeviceId } from "../../lib/deviceId";
 import { msToClock } from "../../ui/ui";
 import {
   Button, Card, Grid, Pill, ResultSection, ResultText,
@@ -9,40 +9,23 @@ import {
 } from "../../ui/components";
 import { IconMic } from "../../ui/icons";
 
-type Busy<T> = { status: "idle" } | { status: "loading" } | { status: "ok"; data: T } | { status: "error"; error: string };
+type RecState = "idle" | "recording" | "stopping" | "classifying";
+
+type Result =
+  | { status: "idle" }
+  | { status: "error"; error: string }
+  | { status: "ok"; verdict: string; transcript: string };
+
 const toErr = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-function AudioResult({ data, localAudioUrl }: { data: AudioTask; localAudioUrl?: string }) {
-  const statusTone =
-    data.status === "done" ? "safe" : data.status === "error" ? "danger" : "warn";
-  const statusLabel =
-    data.status === "done" ? "Готово" : data.status === "error" ? "Ошибка" : "В обработке";
-
-  return (
-    <div className="result-view">
-      <div className="result-verdict-row">
-        <Pill tone={statusTone}>{statusLabel}</Pill>
-      </div>
-
-      {data.transcription && (
-        <ResultSection title="Транскрипция разговора">
-          <ResultText>{data.transcription}</ResultText>
-        </ResultSection>
-      )}
-
-      {data.summary && (
-        <ResultSection title="Вывод ИИ">
-          <ResultText>{data.summary}</ResultText>
-        </ResultSection>
-      )}
-
-      {localAudioUrl && (
-        <ResultSection title="Запись">
-          <audio controls src={localAudioUrl} style={{ width: "100%" }} />
-        </ResultSection>
-      )}
-    </div>
-  );
+function buildWsUrl(deviceId: string): string {
+  const base = (import.meta.env.VITE_SERVICE_BASE_URL || "").replace(/\/$/, "");
+  const path = `/ws/transcribe/?device_id=${encodeURIComponent(deviceId)}`;
+  if (!base) {
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${proto}//${window.location.host}${path}`;
+  }
+  return base.replace(/^https?/, (m: string) => (m === "https" ? "wss" : "ws")) + path;
 }
 
 export function AudioPage() {
@@ -50,82 +33,125 @@ export function AudioPage() {
     title: "Анализ аудио-звонков на мошенничество | Vantoryx",
     description: "Запишите подозрительный звонок — ИИ расшифрует запись и проверит разговор на признаки мошенничества.",
   });
+
   const [source, setSource] = useState<AudioSource>("mic");
-  const [recState, setRecState] = useState<"idle" | "recording" | "stopping">("idle");
+  const [recState, setRecState] = useState<RecState>("idle");
   const [recTimeMs, setRecTimeMs] = useState(0);
-  const stopRef = useRef<null | (() => Promise<Recording>)>(null);
+  const [liveTranscript, setLiveTranscript] = useState("");
+  const [result, setResult] = useState<Result>({ status: "idle" });
+
+  const stopRecorderRef = useRef<null | (() => Promise<void>)>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const tickRef = useRef<number | null>(null);
-  const [res, setRes] = useState<Busy<AudioTask>>({ status: "idle" });
-  const localAudioUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
       if (tickRef.current) window.clearInterval(tickRef.current);
-      if (localAudioUrlRef.current) URL.revokeObjectURL(localAudioUrlRef.current);
+      wsRef.current?.close();
     };
   }, []);
 
   async function start() {
-    setRes({ status: "idle" });
+    setLiveTranscript("");
+    setResult({ status: "idle" });
     setRecTimeMs(0);
-    if (localAudioUrlRef.current) {
-      URL.revokeObjectURL(localAudioUrlRef.current);
-      localAudioUrlRef.current = null;
-    }
     setRecState("recording");
+
+    const ws = new WebSocket(buildWsUrl(getDeviceId()));
+    wsRef.current = ws;
+
+    // Wait for connection before starting recorder
+    try {
+      await new Promise<void>((resolve, reject) => {
+        ws.addEventListener("open", () => resolve(), { once: true });
+        ws.addEventListener("error", () => reject(new Error("Не удалось подключиться к серверу")), { once: true });
+        setTimeout(() => reject(new Error("WebSocket: таймаут подключения")), 6000);
+      });
+    } catch (e) {
+      setResult({ status: "error", error: toErr(e) });
+      setRecState("idle");
+      ws.close();
+      wsRef.current = null;
+      return;
+    }
+
+    ws.addEventListener("message", (e) => {
+      const msg = JSON.parse(e.data as string) as Record<string, string>;
+      if (msg.type === "partial") {
+        setLiveTranscript(msg.full ?? "");
+      } else if (msg.type === "classifying") {
+        setRecState("classifying");
+      } else if (msg.type === "result") {
+        setResult({ status: "ok", verdict: msg.verdict ?? "", transcript: msg.transcript ?? "" });
+        setRecState("idle");
+        ws.close();
+        wsRef.current = null;
+      }
+    });
+
+    ws.addEventListener("error", () => {
+      setResult({ status: "error", error: "WebSocket: ошибка соединения" });
+      setRecState("idle");
+    });
+
     try {
       const startedAt = performance.now();
-      const { stop } = await startRecording(source);
-      stopRef.current = stop;
-      tickRef.current = window.setInterval(() => setRecTimeMs(Math.round(performance.now() - startedAt)), 250);
+      const { stop } = await startStreamingRecorder(source, (chunk) => {
+        if (ws.readyState === WebSocket.OPEN) ws.send(chunk);
+      });
+
+      stopRecorderRef.current = stop;
+      tickRef.current = window.setInterval(
+        () => setRecTimeMs(Math.round(performance.now() - startedAt)),
+        250,
+      );
     } catch (e) {
+      setResult({ status: "error", error: toErr(e) });
       setRecState("idle");
-      setRes({ status: "error", error: toErr(e) });
+      ws.close();
+      wsRef.current = null;
     }
   }
 
   async function stop() {
-    if (!stopRef.current) return;
+    if (!stopRecorderRef.current) return;
     setRecState("stopping");
-    if (tickRef.current) window.clearInterval(tickRef.current);
-    const s = stopRef.current;
-    stopRef.current = null;
+    if (tickRef.current) {
+      window.clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
+
+    const stopRec = stopRecorderRef.current;
+    stopRecorderRef.current = null;
 
     try {
-      const rec = await s();
-      setRecState("idle");
-      setRes({ status: "loading" });
-
-      if (localAudioUrlRef.current) URL.revokeObjectURL(localAudioUrlRef.current);
-      localAudioUrlRef.current = URL.createObjectURL(rec.blob);
-
-      const ext = rec.mimeType.includes("ogg") ? "ogg" : "webm";
-      const created = await api.createAudioTask(rec.blob, `recording.${ext}`);
-      const taskId = created.id;
-
-      const deadline = performance.now() + 60_000;
-      while (true) {
-        const task = await api.getAudioTask(taskId);
-        if (task.status === "done" || task.status === "error") {
-          setRes({ status: "ok", data: task });
-          break;
-        }
-        if (performance.now() > deadline) {
-          setRes({ status: "ok", data: task });
-          break;
-        }
-        await new Promise((r) => setTimeout(r, 1500));
+      await stopRec(); // waits for onstop — all chunks flushed
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "stop" }));
+        setRecState("classifying");
+      } else {
+        setRecState("idle");
       }
     } catch (e) {
+      setResult({ status: "error", error: toErr(e) });
       setRecState("idle");
-      setRes({ status: "error", error: toErr(e) });
     }
   }
 
+  const showTranscriptBox =
+    recState === "recording" || recState === "stopping" || recState === "classifying" || liveTranscript !== "";
+
+  const verdictTone =
+    result.status === "ok"
+      ? result.verdict.includes("мошенники")
+        ? "danger"
+        : "safe"
+      : "warn";
+
   const info = (
     <>
-      <p>Режим записывает разговор через микрофон или системный звук, отправляет аудио на сервер, транскрибирует через Whisper и анализирует ИИ на признаки мошенничества.</p>
-      <p>Источник <strong>Микрофон</strong> — запись вашего голоса. Источник <strong>Устройство</strong> — захват звука с экрана/вкладки (работает не во всех браузерах; нужно разрешение на передачу звука в диалоге).</p>
+      <p>Режим записывает разговор через микрофон или системный звук, транскрибирует в реальном времени через Whisper и анализирует ИИ на признаки мошенничества.</p>
+      <p>Источник <strong>Микрофон</strong> — запись вашего голоса. Источник <strong>Устройство</strong> — захват звука с экрана/вкладки (нужно разрешение «Поделиться звуком» в диалоге браузера).</p>
     </>
   );
 
@@ -147,28 +173,49 @@ export function AudioPage() {
             ]}
           />
 
-          {recState !== "recording" ? (
-            <Button onClick={start} disabled={recState !== "idle"}>
+          {recState === "idle" && (
+            <Button onClick={start}>
               <IconMic />
               Начать запись
             </Button>
-          ) : (
+          )}
+
+          {recState === "recording" && (
             <Button variant="danger" onClick={stop}>
               <IconMic />
               Остановить {msToClock(recTimeMs)}
             </Button>
           )}
 
-          {recState === "stopping" ? <Pill tone="warn">Обрабатываю…</Pill> : null}
-          {res.status === "loading" ? <Pill tone="warn">Отправляю на сервер…</Pill> : null}
-          {res.status === "error" ? <Pill tone="danger">{res.error}</Pill> : null}
+          {recState === "stopping" && <Pill tone="warn">Останавливаю…</Pill>}
+          {recState === "classifying" && <Pill tone="warn">Анализирую…</Pill>}
+          {result.status === "error" && <Pill tone="danger">{result.error}</Pill>}
         </Row>
 
         <Small>
-          Для источника «Устройство» в диалоге браузера нужно включить передачу звука (если опция есть). Работает не во всех браузерах.
+          Для источника «Устройство» в диалоге браузера включите передачу звука. Работает не во всех браузерах.
         </Small>
 
-        {res.status === "ok" ? <AudioResult data={res.data} localAudioUrl={localAudioUrlRef.current ?? undefined} /> : null}
+        {showTranscriptBox && (
+          <ResultSection title="Транскрипция (в реальном времени)">
+            <ResultText>
+              {liveTranscript || "Ожидание речи…"}
+            </ResultText>
+          </ResultSection>
+        )}
+
+        {result.status === "ok" && (
+          <div className="result-view">
+            <div className="result-verdict-row">
+              <Pill tone={verdictTone}>{result.verdict}</Pill>
+            </div>
+            {result.transcript && (
+              <ResultSection title="Полная транскрипция">
+                <ResultText>{result.transcript}</ResultText>
+              </ResultSection>
+            )}
+          </div>
+        )}
       </Card>
     </Grid>
   );
