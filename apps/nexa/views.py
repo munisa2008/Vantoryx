@@ -98,6 +98,7 @@ def create_audio_task(request):
 
     HistoryEntry.objects.create(
         entry_type='audio',
+        device_id=request.META.get('HTTP_X_DEVICE_ID', ''),
         audio_task=obj,
         result={
             'transcription': obj.transcription,
@@ -199,6 +200,7 @@ def text_scam(request):
 
     HistoryEntry.objects.create(
         entry_type='text',
+        device_id=request.META.get('HTTP_X_DEVICE_ID', ''),
         input_text=text,
         result=response_data,
     )
@@ -486,6 +488,7 @@ def link_analysis(request):
 
     HistoryEntry.objects.create(
         entry_type='link',
+        device_id=request.META.get('HTTP_X_DEVICE_ID', ''),
         input_text=text,
         result=response_data,
     )
@@ -566,6 +569,7 @@ def what_to_reply(request):
 
     HistoryEntry.objects.create(
         entry_type='reply',
+        device_id=request.META.get('HTTP_X_DEVICE_ID', ''),
         input_text=text,
         result=response_data,
     )
@@ -632,6 +636,7 @@ def human_rewrite(request):
 
     HistoryEntry.objects.create(
         entry_type='rewrite',
+        device_id=request.META.get('HTTP_X_DEVICE_ID', ''),
         input_text=text,
         result=response_data,
     )
@@ -712,6 +717,7 @@ def reverse_phishing(request):
 
     HistoryEntry.objects.create(
         entry_type='reverse',
+        device_id=request.META.get('HTTP_X_DEVICE_ID', ''),
         input_text=text,
         result=response_data,
     )
@@ -723,7 +729,8 @@ def reverse_phishing(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def history_list(request):
-    entries = HistoryEntry.objects.select_related('audio_task').all()[:100]
+    device_id = request.META.get('HTTP_X_DEVICE_ID', '')
+    entries = HistoryEntry.objects.select_related('audio_task').filter(device_id=device_id)[:100]
     serializer = HistoryEntrySerializer(entries, many=True, context={'request': request})
     return Response(serializer.data)
 
