@@ -34,7 +34,6 @@ export type AudioTask = {
   status: "pending" | "done" | "error" | string;
   transcription: string;
   summary: string;
-  file: string;
 };
 
 export type HistoryEntryType = "text" | "link" | "audio" | "reply" | "rewrite" | "reverse";

@@ -12,7 +12,7 @@ import { IconMic } from "../../ui/icons";
 type Busy<T> = { status: "idle" } | { status: "loading" } | { status: "ok"; data: T } | { status: "error"; error: string };
 const toErr = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-function AudioResult({ data }: { data: AudioTask }) {
+function AudioResult({ data, localAudioUrl }: { data: AudioTask; localAudioUrl?: string }) {
   const statusTone =
     data.status === "done" ? "safe" : data.status === "error" ? "danger" : "warn";
   const statusLabel =
@@ -36,9 +36,9 @@ function AudioResult({ data }: { data: AudioTask }) {
         </ResultSection>
       )}
 
-      {data.file && (
+      {localAudioUrl && (
         <ResultSection title="Запись">
-          <audio controls src={data.file} style={{ width: "100%" }} />
+          <audio controls src={localAudioUrl} style={{ width: "100%" }} />
         </ResultSection>
       )}
     </div>
@@ -56,16 +56,22 @@ export function AudioPage() {
   const stopRef = useRef<null | (() => Promise<Recording>)>(null);
   const tickRef = useRef<number | null>(null);
   const [res, setRes] = useState<Busy<AudioTask>>({ status: "idle" });
+  const localAudioUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
       if (tickRef.current) window.clearInterval(tickRef.current);
+      if (localAudioUrlRef.current) URL.revokeObjectURL(localAudioUrlRef.current);
     };
   }, []);
 
   async function start() {
     setRes({ status: "idle" });
     setRecTimeMs(0);
+    if (localAudioUrlRef.current) {
+      URL.revokeObjectURL(localAudioUrlRef.current);
+      localAudioUrlRef.current = null;
+    }
     setRecState("recording");
     try {
       const startedAt = performance.now();
@@ -89,6 +95,9 @@ export function AudioPage() {
       const rec = await s();
       setRecState("idle");
       setRes({ status: "loading" });
+
+      if (localAudioUrlRef.current) URL.revokeObjectURL(localAudioUrlRef.current);
+      localAudioUrlRef.current = URL.createObjectURL(rec.blob);
 
       const ext = rec.mimeType.includes("ogg") ? "ogg" : "webm";
       const created = await api.createAudioTask(rec.blob, `recording.${ext}`);
@@ -159,7 +168,7 @@ export function AudioPage() {
           Для источника «Устройство» в диалоге браузера нужно включить передачу звука (если опция есть). Работает не во всех браузерах.
         </Small>
 
-        {res.status === "ok" ? <AudioResult data={res.data} /> : null}
+        {res.status === "ok" ? <AudioResult data={res.data} localAudioUrl={localAudioUrlRef.current ?? undefined} /> : null}
       </Card>
     </Grid>
   );

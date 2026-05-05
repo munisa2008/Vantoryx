@@ -2,7 +2,6 @@ from django.db import models
 
 
 class AudioTask(models.Model):
-    file = models.FileField(upload_to='audio/')
     transcription = models.TextField(blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
 

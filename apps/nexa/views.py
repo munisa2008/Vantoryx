@@ -4,12 +4,13 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny
+import os
+import tempfile
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import AudioTask, HistoryEntry
 from .serializers import (
-    AudioTaskCreateSerializer,
     AudioTaskSerializer,
     TextScamAnalysisRequestSerializer,
     LinkAnalysisRequestSerializer,
@@ -26,68 +27,86 @@ client = OpenAI(
 )
 
 
-class AudioTaskCreateView(generics.CreateAPIView):
-    queryset = AudioTask.objects.all()
-    serializer_class = AudioTaskCreateSerializer
-    parser_classes = [MultiPartParser, FormParser]
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def create_audio_task(request):
+    audio_file = request.FILES.get("file")
+    if not audio_file:
+        return Response({"detail": "No file provided"}, status=400)
 
-    def perform_create(self, serializer):
-        obj = serializer.save()
-        file_path = obj.file.path
+    content_type = audio_file.content_type or ""
+    if "ogg" in content_type:
+        suffix = ".ogg"
+    elif "mp4" in content_type or "m4a" in content_type:
+        suffix = ".mp4"
+    else:
+        suffix = ".webm"
 
-        try:
-            transcript = transcribe_with_whisper_local(
-                file_path=file_path,
-                language="ru",
-                model_name="base",
-            )
+    obj = AudioTask.objects.create(status="processing")
 
-            completion = client.chat.completions.create(
-                model="openai/gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "Ты — система классификации телефонных разговоров и сообщений."
-                            "Твоя задача — определить, является ли звонок мошенническим."
-                            "Проанализируй текст разговора и определи: есть ли признаки мошенничества, попытка обмана, давления, срочности, запросы денег, кодов, паролей, SMS, карт, CVV, представление сотрудником банка, полиции, госорганов без подтверждений, манипуляции страхом, выгодой или угрозами, несоответствия, социальная инженерия"
-                            "❗Правила ответа: 1. Отвечай ТОЛЬКО одной из двух фраз. 2. Никаких пояснений, комментариев, знаков препинания или дополнительного текста. 3. Формулировки должны совпадать ТОЧНО."
-                            "Допустимые ответы: 'Звонят мошенники!', 'Звонок безопасный'"
-                            "Если есть ХОТЬ МАЛЕЙШИЕ признаки мошенничества — выбирай:'Звонят мошенники!'"
-                            "Если звонок выглядит обычным, бытовым или нейтральным — выбирай:'Звонок безопасный'"
-                        ),
-                    },
-                    {
-                        "role": "user",
-                        "content": transcript,
-                    },
-                ],
-                temperature=0.0,
-                max_tokens=50,
-            )
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp_path = tmp.name
+            for chunk in audio_file.chunks():
+                tmp.write(chunk)
 
-            verified = (completion.choices[0].message.content or "").strip()
-
-            obj.transcription = transcript
-            obj.summary = verified
-            obj.status = "done"
-        except Exception as e:
-            obj.transcription = ""
-            obj.summary = ""
-            obj.status = "error"
-            obj.save(update_fields=["transcription", "summary", "status"])
-
-        obj.save(update_fields=["transcription", "status", "summary"])
-
-        HistoryEntry.objects.create(
-            entry_type='audio',
-            audio_task=obj,
-            result={
-                'transcription': obj.transcription,
-                'summary': obj.summary,
-                'status': obj.status,
-            },
+        transcript = transcribe_with_whisper_local(
+            file_path=tmp_path,
+            language="ru",
+            model_name="base",
         )
+
+        completion = client.chat.completions.create(
+            model="openai/gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Ты — система классификации телефонных разговоров и сообщений."
+                        "Твоя задача — определить, является ли звонок мошенническим."
+                        "Проанализируй текст разговора и определи: есть ли признаки мошенничества, попытка обмана, давления, срочности, запросы денег, кодов, паролей, SMS, карт, CVV, представление сотрудником банка, полиции, госорганов без подтверждений, манипуляции страхом, выгодой или угрозами, несоответствия, социальная инженерия"
+                        "❗Правила ответа: 1. Отвечай ТОЛЬКО одной из двух фраз. 2. Никаких пояснений, комментариев, знаков препинания или дополнительного текста. 3. Формулировки должны совпадать ТОЧНО."
+                        "Допустимые ответы: 'Звонят мошенники!', 'Звонок безопасный'"
+                        "Если есть ХОТЬ МАЛЕЙШИЕ признаки мошенничества — выбирай:'Звонят мошенники!'"
+                        "Если звонок выглядит обычным, бытовым или нейтральным — выбирай:'Звонок безопасный'"
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": transcript,
+                },
+            ],
+            temperature=0.0,
+            max_tokens=50,
+        )
+
+        verified = (completion.choices[0].message.content or "").strip()
+        obj.transcription = transcript
+        obj.summary = verified
+        obj.status = "done"
+    except Exception:
+        obj.transcription = ""
+        obj.summary = ""
+        obj.status = "error"
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+    obj.save(update_fields=["transcription", "status", "summary"])
+
+    HistoryEntry.objects.create(
+        entry_type='audio',
+        audio_task=obj,
+        result={
+            'transcription': obj.transcription,
+            'summary': obj.summary,
+            'status': obj.status,
+        },
+    )
+
+    return Response({"id": obj.id}, status=201)
 
 
 class AudioTaskDetailView(generics.RetrieveAPIView):

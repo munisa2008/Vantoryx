@@ -5,7 +5,7 @@ from .models import AudioTask, HistoryEntry
 class AudioTaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AudioTask
-        fields = ['id', 'file']
+        fields = ['id']
 
 
 class AudioTaskSerializer(serializers.ModelSerializer):
@@ -13,7 +13,6 @@ class AudioTaskSerializer(serializers.ModelSerializer):
         model = AudioTask
         fields = [
             'id',
-            'file',
             'status',
             'transcription',
             'summary',
@@ -88,10 +87,4 @@ class HistoryEntrySerializer(serializers.ModelSerializer):
         fields = ['id', 'entry_type', 'input_text', 'audio_file', 'result', 'created_at']
 
     def get_audio_file(self, obj):
-        if obj.audio_task and obj.audio_task.file:
-            request = self.context.get('request')
-            url = obj.audio_task.file.url
-            if request:
-                return request.build_absolute_uri(url)
-            return url
         return None
