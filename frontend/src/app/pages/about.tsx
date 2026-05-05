@@ -291,7 +291,7 @@ export function AboutPage() {
             </div>
             <div className="about-row-body">
               <span className="about-row-label">Деплой</span>
-              <span className="about-row-value">Railway</span>
+              <span className="about-row-value">Ubuntu LTS 2.22.0</span>
             </div>
           </div>
         </div>

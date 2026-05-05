@@ -55,6 +55,17 @@ export function TextPage() {
   });
   const [input, setInput] = useState("");
   const [res, setRes] = useState<Busy<TextScamResponse>>({ status: "idle" });
+  const [pasteErr, setPasteErr] = useState("");
+
+  async function pasteText() {
+    try {
+      const text = await navigator.clipboard.readText();
+      setInput(text);
+      setPasteErr("");
+    } catch {
+      setPasteErr("Нет доступа к буферу обмена");
+    }
+  }
 
   const verdictPill = useMemo(() => {
     if (res.status !== "ok") return null;
@@ -89,6 +100,18 @@ export function TextPage() {
         info={info}
       >
         <TextArea value={input} onChange={setInput} placeholder="Вставьте сюда текст…" />
+
+        <Row wrap>
+          <Button variant="ghost" onClick={pasteText}>
+            Вставить текст
+          </Button>
+          {input && (
+            <Button variant="ghost" onClick={() => { setInput(""); setPasteErr(""); }}>
+              Очистить
+            </Button>
+          )}
+          {pasteErr && <Pill tone="danger">{pasteErr}</Pill>}
+        </Row>
 
         <Row wrap>
           <Button variant="primary" onClick={run} disabled={!input.trim() || res.status === "loading"}>

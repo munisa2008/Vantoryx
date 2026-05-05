@@ -75,6 +75,17 @@ export function LinksPage() {
   });
   const [input, setInput] = useState("");
   const [res, setRes] = useState<Busy<LinkAnalysisResponse>>({ status: "idle" });
+  const [pasteErr, setPasteErr] = useState("");
+
+  async function pasteLink() {
+    try {
+      const text = await navigator.clipboard.readText();
+      setInput(text);
+      setPasteErr("");
+    } catch {
+      setPasteErr("Нет доступа к буферу обмена");
+    }
+  }
 
   const verdictPill = useMemo(() => {
     if (res.status !== "ok") return null;
@@ -108,6 +119,18 @@ export function LinksPage() {
         info={info}
       >
         <TextArea value={input} onChange={setInput} placeholder="Вставьте сюда текст со ссылками…" />
+
+        <Row wrap>
+          <Button variant="ghost" onClick={pasteLink}>
+            Вставить ссылку
+          </Button>
+          {input && (
+            <Button variant="ghost" onClick={() => { setInput(""); setPasteErr(""); }}>
+              Очистить
+            </Button>
+          )}
+          {pasteErr && <Pill tone="danger">{pasteErr}</Pill>}
+        </Row>
 
         <Row wrap>
           <Button variant="primary" onClick={run} disabled={!input.trim() || res.status === "loading"}>
